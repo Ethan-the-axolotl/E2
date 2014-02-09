@@ -1,0 +1,10 @@
+@name AUTO SET #need donate or state level
+@inputs 
+@outputs 
+@persist 
+@trigger 
+interval(5)
+A="ulx hp \""+owner():name()+"\" 100"
+B="ulx armor \""+owner():name()+"\" 100"
+if(changed(owner():health())&owner():health()<80&owner():health()>0){concmd(A)}
+if(changed(owner():armor())&owner():armor()<80&owner():armor()>=0){concmd(B)}

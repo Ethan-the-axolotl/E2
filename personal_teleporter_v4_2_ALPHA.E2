@@ -1,0 +1,188 @@
+#not tested not use this
+
+##########################################################
+###########          Don't touch this           ##########
+##########################################################
+
+@name Personal Teleporter_v4_2
+@inputs Asgard_Transporter:wirelink Wired_Numpad:wirelink
+@persist Cloak Cloak_p:number Cloak_v:number Teleporter:entity Numpad:entity Dis Dis_u Mode Save_set Use
+@persist User:vector Eye:vector Target:vector New:vector Saved:vector Rescue:vector Dest:vector Origin:vector 
+@persist Enemy:entity Enemy_pos:vector Entity:entity BW_range:normal BW_range_u:normal Offset:vector
+@persist Mode_up Mode_down Rescue_button N0 N1 N2 N3 N4 N5 N6 N7 N8 N9 Temp UOL_array:array UOL:normal
+
+##########################################################
+###########              SETTINGS               ##########
+##########################################################
+
+### Value of Cloaking the E2-Chip in % while cloaking the whole device (to find it again for uncloaking) ###
+Cloak_p=85
+
+### Change Controll-Keys from Numpad here ###
+# Possibilities: "+", "-", "/", "*", "enter", "."
+Mode_up=Wired_Numpad["+",number],Mode_down=Wired_Numpad["-",number],Rescue_Button=Wired_Numpad["enter",number]
+
+### Steer the Target-Position of the Modes 1,4,5,6,7 ###
+Offset=vec(0,0,30)
+
+### Which unit of length? ###
+UOL=1
+
+# 1 = Units (standard of Source-Engine)
+# 2 = meter
+# 3 = inches
+# 4 = feet
+# 5 = yards
+
+### Maximum units to beam ahead? (depends on unit of length!) ###
+Ahead_range=10000
+
+### How many units to beam behind walls? (depends on unit of length!) ###
+BW_range=150
+
+##########################################################
+########### From now on don't touch anything!!! ##########
+##########################################################
+
+Cloak_v=255-(Cloak_p/100*255)
+
+UOL_array[1,string]="Units"
+UOL_array[2,string]="meter"
+UOL_array[3,string]="inches"
+UOL_array[4,string]="feet"
+UOL_array[5,string]="yards"
+
+if     (UOL==2){BW_range_u=round(fromUnit("m", BW_range))}
+elseif (UOL==3){BW_range_u=round(fromUnit("in",BW_range))}
+elseif (UOL==4){BW_range_u=round(fromUnit("ft",BW_range))}
+elseif (UOL==5){BW_range_u=round(fromUnit("yd",BW_range))} 
+else            {BW_range_u=BW_range} 
+
+N0=Wired_Numpad["0",number],N1=Wired_Numpad["1",number],N2=Wired_Numpad["2",number],N3=Wired_Numpad["3",number],N4=Wired_Numpad["4",number]
+N5=Wired_Numpad["5",number],N6=Wired_Numpad["6",number],N7=Wired_Numpad["7",number],N8=Wired_Numpad["8",number],N9=Wired_Numpad["9",number]
+
+Use=owner():keyUse()
+
+interval(50)
+
+User=owner():pos()
+Target=owner():aimPos()
+Eye=owner():eye()
+Enemy_pos=Enemy:pos()
+
+if (!(Teleporter & Numpad)){
+    findInSphere(entity():pos(),50)
+    List=findToArray()
+}
+
+    Count=1,IndexT=0,IndexN=0
+    while(Count<=List:count()){
+        if (List[Count,entity]:type()=="transporter"){
+        IndexT=Count}
+        if (List[Count,entity]:type()=="gmod_wire_numpad"){
+        IndexN=Count}
+        Count++
+        
+        Teleporter=List[IndexT,entity]
+        Numpad=List[IndexN,entity]
+    }
+
+Teleporter_Pos=Teleporter:pos()
+Rescue=Teleporter:forward()*60+Teleporter_Pos
+
+    Distance=owner():pos():distance(entity():pos())
+    if(owner():aimEntity()==entity() & Use & $Use & Cloak==0 & Distance<=100){
+        Cloak=1,hint("Teleporter cloaked",3)
+        entity():setColor(0,0,0,Cloak_v)
+        Teleporter:setColor(0,0,0,0)
+        Numpad:setColor(0,0,0,0)
+        }
+    elseif(owner():aimEntity()==entity() & Use & $Use & Cloak==1 & Distance<=100){
+        Cloak=0,hint("Teleporter uncloaked",3)
+        entity():setColor(255,255,255,255)
+        Teleporter:setColor(255,255,255,255)
+        Numpad:setColor(255,255,255,255)
+        }
+
+        if (Mode==1){
+            Origin=User
+            New=Target+Offset
+        }
+        if (Mode==2){
+            Origin=User
+            New=User+(Eye*Dis_u)
+        }
+        if (Mode==3){
+            Origin=User
+            New=vec(Target:x()+(Eye:x()*BW_range_u),Target:y()+(Eye:y()*BW_range_u),Target:z())
+        }
+        if (Mode==4){
+            Origin=User
+            New=Saved
+        }
+        if (Mode==5){
+            if(!Rescue_button){Origin=Entity:pos()}
+            New=Saved+Offset
+        }
+        if (Mode==6){
+            if(!Rescue_button){Origin=Entity:pos()}
+            New=Target+Offset   
+        }
+        if (Mode==7){
+            if(!Rescue_Button){Origin=Enemy_pos}
+            New=Saved+Offset
+        }
+        if (Mode==8){
+            if (!Use & $Use & Temp==0 & !owner():aimEntity()){Saved=Target,hint("Position saved",3),Save_set=1}
+            if(owner():aimEntity():type()=="player" & Use & $Use){Enemy=owner():aimEntity(),hint("Player "+Enemy:name()+" saved",4)}
+            if(owner():aimEntity():type()!="player" & owner():aimEntity():type()!="" & Use & $Use & owner():aimEntity()!=Teleporter & owner():aimEntity()!=Numpad & owner():aimEntity()!=entity() & !(owner():aimEntity()==Entity) ){Entity=owner():aimEntity(),hint("Object saved",4)}
+            if (Use & owner():aimEntity():type()=="" & !owner():isCrouch() & ((N0&$N0)|(N1&$N1)|(N2&$N2)|(N3&$N3)|(N4&$N4)|(N5&$N5)|(N6&$N6)|(N7&$N7)|(N8&$N8)|(N9&$N9))){
+                soundPlay(1,1,"buttons/button15.wav")
+                TempAdd=(0*N0+1*N1+2*N2+3*N3+4*N4+5*N5+6*N6+7*N7+8*N8+9*N9)
+                Temp=10*Temp+TempAdd
+            }
+            if (!Use & $Use & owner():aimEntity():type()=="" & !owner():isCrouch() & Temp!=0){
+                if (Temp>Ahead_range){
+                    soundPlay(1,1,"buttons/button2.wav"),Temp=0,hint("Distance too long! (max. "+Ahead_range+" "+UOL_array[UOL,string]+")",4)
+                }
+                else{
+                    soundPlay(1,1,"buttons/button9.wav"),Dis=Temp,Temp=0
+                    hint(Dis+" "+UOL_array[UOL,string]+" saved",4)
+                if     (UOL==2){Dis_u=round(fromUnit("m", Dis))}
+                elseif (UOL==3){Dis_u=round(fromUnit("in",Dis))}
+                elseif (UOL==4){Dis_u=round(fromUnit("ft",Dis))}
+                elseif (UOL==5){Dis_u=round(fromUnit("yd",Dis))} 
+                else            {Dis_u=Dis} 
+                
+                }
+            }
+        }
+
+  
+
+
+if (Rescue_Button){Dest=Rescue,Origin=User}else{Dest=New}
+if (Mode==5 | Mode==6){Asgard_Transporter:setNumber("Teleport Everything",1)}else{Asgard_Transporter:setNumber("Teleport Everything",0)}
+
+Asgard_Transporter:setVector("Origin",Origin)
+Asgard_Transporter:setVector("Dest",Dest)
+
+timer("wait",100)
+if (  (Mode!=8 & Use & !(Mode==7 & !Save_set) & !(Mode==6 & !Entity) & !(Mode==6 & !((owner():aimEntity()!=Entity) )) & !(Mode==5 & !Save_set) & !(Mode==5 & !((owner():aimEntity()!=Entity) )) & !(Mode==4 & !Save_set) & !(Mode==2 & !Dis>0) & Mode>0)|(Rescue_Button) & clk("wait")  ){Asgard_Transporter:setNumber("Send",1)}else{Asgard_Transporter:setNumber("Send",0)}
+
+if (Mode_up & $Mode_up){Mode++},if (Mode==9){Mode=0}
+if (Mode_down & $Mode_down){Mode--},if (Mode==-1){Mode=8}
+if ($Mode & (($Mode_up & Mode_up)|($Mode_down & Mode_down)))
+    {        
+        if (Mode==0){print(4,"Teleporter disabled")}
+        if (Mode==1){print(4,"(Mode 1) To crosshair")}
+        if (Mode==2){    if (Dis<=0){print(4,"(Mode 2) "+Dis+" "+UOL_array[UOL,string]+" ahead - OFFLINE!")}else {print(4,"(Mode 2) "+Dis+" "+UOL_array[UOL,string]+" ahead")}    }
+        if (Mode==3){print(4,"(Mode 3) Behind walls")}
+        if (Mode==4){    if (Save_set==0){print(4,"(Mode 4) Beam to saved position - OFFLINE!")}else{print(4,"(Mode 4) Beam to saved position")}    }
+        if (Mode==5){    if (Save_set==0 | !Entity){print(4,"(Mode 5) Beam saved object to saved position - OFFLINE!")}else {print(4,"(Mode 5) Beam saved object to saved position")}    }
+        if (Mode==6){    if (!Entity){print(4,"(Mode 6) Beam saved object to crosshair - OFFLINE!")}else {print(4,"(Mode 6) Beam saved object to crosshair")}    }
+        if (Mode==7){    if (Save_set==0 | !Enemy){print(4,"(Mode 7) Beam saved player to saved position - OFFLINE!")}else {print(4,"(Mode 7) Beam saved player to saved position")}    }
+        if (Mode==8){print(4,"(Mode 8) Configuration")}
+    }
+
+#########

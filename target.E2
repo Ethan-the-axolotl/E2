@@ -1,0 +1,8 @@
+@name target
+@inputs X Y Z
+@outputs MX MY MZ
+interval(10)
+
+MX=X
+MY=Y
+MZ=Z + 100

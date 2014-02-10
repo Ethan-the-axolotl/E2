@@ -1,0 +1,19 @@
+@name Asgard Teleport Owner
+@outputs X Y Z Pos:vector X2 Y2 Z2 Trace:vector
+@persist B:entity
+
+runOnTick(1)
+#Position of owner.
+B = entity():owner()
+
+#Position of owner.
+Pos=B:pos()
+X=Pos:x()
+Y=Pos:y()
+Z=Pos:z()
+
+#Position of where owner is looking.
+Trace=B:aimPos()
+X2=Trace:x()
+Y2=Trace:y()
+Z2=Trace:z()

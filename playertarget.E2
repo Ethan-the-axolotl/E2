@@ -1,0 +1,13 @@
+@name PlayerTarget
+@inputs  
+@outputs Target:entity Vector:vector
+@persist
+runOnTick(1)
+runOnChat(1)
+LastSaid=owner():lastSaid():explode(" ")
+if(chatClk(owner())&LastSaid[1,string]=="/tar")
+{Target=findPlayerByName(LastSaid[2,string])}
+#the above 2 lines of code basicly say that if the owner
+#said something and the first word of that something
+#is !target then the chip would take the second word and find the
+#player with that name.

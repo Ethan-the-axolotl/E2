@@ -1,0 +1,10 @@
+@name FTL
+@inputs
+@outputs X Y Z
+@trigger
+
+interval(1)
+
+X = (random(1,10000))
+Y = (random(1,10000))
+Z = (random(1,10000))

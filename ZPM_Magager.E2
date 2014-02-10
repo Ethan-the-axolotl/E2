@@ -1,0 +1,209 @@
+@name ZPM Magager
+@inputs Hub:wirelink EGP:wirelink ToggleZPMs
+@outputs Z1 Z2 Z3 P1 P2 P3 C TYPE
+@persist State Counter Automatic
+@persist [CENTRE SIZE]:vector2 H Text TYPE Table:table T
+@trigger 
+
+#####################################################################################################
+#########################################  MADE BY LINK320  #########################################
+#####################################################################################################
+
+interval(100)
+
+if(TYPE){
+    P1 = Hub["ZPM 1 %",number]
+    P2 = Hub["ZPM 2 %",number]
+    P3 = Hub["ZPM 3 %",number]
+}
+H = Hub["ZPM Hub %",number]
+
+if(first() | dupefinished()){
+    
+    
+    function zpm(N,On){
+        if(TYPE){
+            Hub["Deactivate ZPM "+N,number] = !On
+        }
+        else{
+            Hub["Deactivate ZPM",number] = !On
+        }
+    }
+    EGP:egpClear()
+    
+}
+
+if(TYPE | H==0){
+    if(P1 == 0){zpm(1,0)}
+    if(P2 == 0){zpm(2,0)}
+    if(P3 == 0){zpm(3,0)}
+}
+
+if(Automatic){
+    if(P1 < 10 & P1 > -1 & P2 == -1){
+        C = 2
+    }
+    if(P2 < 10 & P2 > -1 & P3 == -1){
+        C = 3
+    }
+    if(P3 < 10 & P3 > -1 & P1 == -1){
+        C = 1
+    }
+    if(changed(C)){
+        zpm(C,1)
+    }
+}
+elseif(changed(T)){
+    for(I=1,3){
+        zpm(I,T)
+    }
+}
+
+
+if(changed(Automatic) | first()){
+    if(Automatic){
+        C=1
+        zpm(2,0)
+        zpm(3,0)
+        T = 2
+    }
+    else{
+        T = 1
+    }
+}
+if(~ToggleZPMs & ToggleZPMs){
+    if(Automatic){
+        timer("NextZPM",1500)
+        C++
+        if(C>3){C=1}
+    }
+    else{
+        T = !T  
+    }
+}
+if(clk("NextZPM")){
+    switch(C){
+        case 1, zpm(3,0) break
+        case 2, zpm(1,0) break
+        case 3, zpm(2,0) break
+    }
+}
+
+
+################## EGP Screen ##################
+if((changed(EGP) | changed(Hub)) & ->EGP & !egpQueue()){
+    
+    Table = table()
+    TYPE = Hub:entity():type()=="zpmhub"
+    T = 1
+    
+    EGP:egpClear()
+    BLUE1 = vec(30,80,200)
+    BLUE4 = vec(0,0,40)
+    CENTRE = vec2(256,200)
+    SIZE = vec2(100)
+    
+    #Background and borders
+    
+    
+    #Details (Fancy boxes and the like)
+    EGP:egpPolyOutline(N,vec2(56,190),vec2(56,86),vec2(62,80),vec2(162,80),vec2(256,174),vec2(350,80),vec2(450,80),vec2(456,86),vec2(456,190))
+    EGP:egpBoxOutline(N+1,CENTRE+vec2(0,25),vec2(400,50))
+    EGP:egpPolyOutline(N+2,vec2(56,260),vec2(56,300),vec2(44,312),vec2(44,372),vec2(56,384),vec2(56,442),vec2(66,452),vec2(172,452),vec2(184,464),vec2(328,464),vec2(340,452),vec2(446,452),vec2(456,442),vec2(456,384),vec2(468,372),vec2(468,312),vec2(456,300),vec2(456,260))
+    local Box = array(vec2(150,346),vec2(156,340),vec2(356,340),vec2(362,346),vec2(362,390),vec2(356,396),vec2(156,396),vec2(150,390))
+    if(TYPE){
+        for(I=1,Box:count()){
+            Box[I,vector2] = Box[I,vector2] + vec2(0,-96)
+        }
+        EGP:egpBox(255,vec2(256,272),vec2(206,52))
+        Table:addNumber("Buttons",255)
+    }
+    EGP:egpPoly(N+3,Box)
+    EGP:egpPolyOutline(N+4,Box)
+    EGP:egpPoly(N+5,vec2(76,66),vec2(84,58),vec2(168,58),vec2(168,66))
+    EGP:egpPoly(N+6,vec2(344,66),vec2(344,58),vec2(428,58),vec2(436,66))
+    for(I=N,N+6){
+        EGP:egpColor(I,vec(0,40,160))
+        EGP:egpSize(I,4)
+    }
+    EGP:egpColor(N+3,vec(0,0,50))
+    EGP:aText(N+7,"ZERO POINT MODULE" + (TYPE ?"S" :""),vec2(256,62))
+    Text = N+8
+    EGP:aText(Text," ACTIVE ",vec2(256,368-96*TYPE))
+    EGP:egpSize(Text,30)
+    
+    N = N+9
+    if(TYPE){
+        local Divs = 36
+        local Width = 2
+        local C = vec2(0,-128)
+        local C1 = vec2(256,300)+C
+        local C2 = vec2(256,300)+C:rotate(120)
+        local C3 = vec2(256,300)+C:rotate(240)
+        
+        local Next = N+9
+        Table:addNumber("Buttons",Next)
+        Next = EGP:segmentReadout(Next,Divs,C1,SIZE/2,Width,Table)
+        Table:addNumber("Buttons",Next)
+        Next = EGP:segmentReadout(Next,Divs,C2,SIZE/2,Width,Table)
+        Table:addNumber("Buttons",Next)
+        Next = EGP:segmentReadout(Next,Divs,C3,SIZE/2,Width,Table)
+        EGP:refreshReadout(1,P1,Table)
+        EGP:refreshReadout(2,P2,Table)
+        EGP:refreshReadout(3,P3,Table)
+    }
+    else{
+        local Divs = 36
+        local Width = 5
+        Table:addNumber("Buttons",N)
+        local Next = EGP:segmentReadout(N,Divs,CENTRE,SIZE,Width,Table)
+        EGP:refreshReadout(1,P1,Table)
+    }
+}
+
+if(TYPE){
+    if(changed(P1) & ->EGP){
+        EGP:refreshReadout(1,P1,Table)
+    }
+    if(changed(P2) & ->EGP){
+        EGP:refreshReadout(2,P2,Table)
+        
+    }
+    if(changed(P3) & ->EGP){
+        EGP:refreshReadout(3,P3,Table)
+        
+    }
+    EGP:egpSetText(Text,(Automatic ? "AUTOMATIC" :(H>0 ? " ACTIVE " : "INACTIVE")))
+}
+else{
+    if(changed(H) & ->EGP){
+        EGP:refreshReadout(1,H,Table)
+        EGP:egpSetText(Text,(H>0 ? " ACTIVE " : "INACTIVE"))
+    }
+}
+
+################# Touch interface ######################
+User = EGP["User",entity]
+if(changed(User) & User){
+    local Cursor = EGP:egpCursor(User)
+    local Buttons = Table["Buttons",array]
+    if(TYPE){
+        if(EGP:button(Cursor,Buttons[1,number])){
+            Automatic = !Automatic
+        }
+        elseif(EGP:circleButton(Cursor,Buttons[2,number])){
+            zpm(1,P1==-1)
+        }
+        elseif(EGP:circleButton(Cursor,Buttons[3,number])){
+            zpm(2,P2==-1)
+        }
+        elseif(EGP:circleButton(Cursor,Buttons[4,number])){
+            zpm(3,P3==-1)
+        }
+    }
+    else{
+        if(EGP:circleButton(Cursor,Buttons[1,number])){
+            zpm(0,!(H>0))
+        }
+    }
+}

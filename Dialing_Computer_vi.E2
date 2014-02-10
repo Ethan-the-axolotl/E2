@@ -1,0 +1,1755 @@
+@name Dialling Computer VI
+@inputs [Stargate GateIris EGP IrisComp]:wirelink
+@outputs Iris Timer:string Pos:vector Secure
+@persist Active Open Chevron Inbound Mode Auto Close Iris Screen
+@persist SG1 SGU Pause Blocking Dialling Time Init Sec Min Secure
+@persist IrisClosed IrisType Unstable Defcon Macro Wait Menu Public Glyphs Local Column3 Timeout
+@persist Ang H Ir Use Skip Overloading Sounds Vol Warning Ready
+@persist M P_Dial P_Up P_Down P_Close P_List P_Mode P_Blocking P_Auto P_Menu P_Defcon P_IDC
+@persist [IDC PrevAddress GateStatus Chevrons]:string
+@persist [Addresses CustomAddresses IDCs Table]:table [Names AddressList Rot]:array GTable:gtable
+@persist [GateCol GateCol2 ChevCol ChevCol2 HorizonCol IrisCol Red Blue Green Color]:vector
+@persist [Cursor IrisSize]:vector2
+@persist [Gate Owner Player EGPUser User]:entity
+@trigger 
+
+
+###########################################################################################################################
+####################################################  MADE BY LINK320  ####################################################
+###########################################################################################################################
+
+##Known bugs:
+#Loses wirelinks and errors on dupe
+#Error messages will ocassionally fail to disappear
+#When trying to load a non-existant file, will create lua error and won't load any files from then on.
+
+##################  FUNCTIONS ###################################
+if(first() | duped()){
+    function string string:limitString(L){
+        if(This:length() > L){
+            return This:sub(1,L-2)+"..."
+        }
+        return This
+    }
+    function string onoff(N){
+        return N ? "ON" : "OFF"
+    }
+    function string getAddress(N){
+        return Addresses[N,array][1,string]
+    }
+    function string getName(N){
+        return Addresses[N,array][2,string]
+    }
+    #setChevrons
+    function setChevrons(){
+        local Start = Table["ChevStart",number]
+        local Add = Glyphs ? Stargate["Dialing Address",string] : ""
+        for(I = 1,9){
+            On = Chevrons:index(I):toNumber() | (SGU & Active)
+            EGP:egpColor(Start+I,(On ? ChevCol : ChevCol2)*(Color/255))
+            if(Glyphs & !Inbound){
+                local Index = 0
+                if(I>=7 & Active){
+                    if(Add:index(I) != "#"){
+                        Index = Start + 9 + I + 1
+                    }
+                    else{
+                        Index = Start + 9 + 7
+                    }
+                }
+                else{
+                    Index = Start + 9 + I
+                }
+                EGP:egpSetText(Index,Add:index(I))
+            }
+        }
+    }
+    function number dialLength(){
+        return Stargate["Dialing Address",string]:length()
+    }
+    function number isSafe(N){
+        return Addresses[N,array][4,number]
+    }
+    function isSafe(N,Safe){
+        local Arr = Addresses[N,array]
+        Table[Arr[1,string],array][4,number] = Safe
+        Addresses[N,array][4,number] = Safe
+    }
+    function vector gatePos(N){
+        return Addresses[N,array][3,vector]
+    }
+    function setGatePos(N,NewPos:vector){
+        local Arr = Addresses[N,array]
+        Table[Arr[1,string],array][3,vector] = NewPos
+        Addresses[N,array][3,vector] = NewPos
+    }
+    function writeIDCs(){
+        fileWrite(Table["FileName",string],vonEncode(IDCs))
+    }
+    function entity getPlayerByID(SteamID:string){
+        local Players = players()
+        local E = noentity()
+        for(I=1,numPlayers()){
+            if(Players[I,entity]:steamID() == SteamID){
+                E = Players[I,entity]
+                break
+            }
+        }
+        return E
+    }
+    function array table:getIdcByID(SteamID:string){
+        return This[SteamID,array]
+    }
+    function array table:getIdcByName(Name:string){
+        local SteamID = findPlayerByName(Name):steamID()
+        return This:getIdcByID(SteamID)
+    }
+    function array table:getIdcByCode(IDC:number){
+        local Data = array()
+        foreach(K, V:array = This){
+            if(V[2,number] == IDC){
+                Data = V
+                break
+            }
+        }
+        return Data
+    }
+    function setIDC(PlyName:string,IDC:string,Status){
+        local Player = findPlayerByName(PlyName)
+        if(Player){
+            local Data = IDCs:getIdcByName(PlyName)
+            local SteamID = Player:steamID()
+            local IDC = IDC:toNumber()
+            if(IDC){
+                Data[1,string] = SteamID
+                Data[2,number] = IDC
+                Data[3,number] = Status
+                IDCs[SteamID,array] = Data
+                writeIDCs()
+            }
+            else{
+                print("Error: Non numeric IDC")
+            }
+        }
+        else{
+            print("Could not find player")
+        }
+    }
+    function setIDC(PlyName:string,IDC:string){
+        local Status = IDCs:getIdcByName(PlyName)[3,number]
+        setIDC(PlyName,IDC,Status)
+    }
+    function setIDCStatus(PlyName:string,Status){
+        if(Status >= 0 & Status <= 2){
+            local Data = IDCs:getIdcByName(PlyName)
+            local SteamID = Data[1,string]
+            Data[3,number] = Status
+            IDCs[SteamID,array] = Data
+            writeIDCs()
+        }
+    }
+    #allowed(E:entity)
+    function number isAllowed(E:entity){
+        local Data = IDCs:getIdcByName(E:name())
+        local FullAccess = (Data[3,number]==2 | E==owner())
+        return (FullAccess ? 1 : Public*2)
+    }
+    function cBox(N,BPos:vector2,BSize:vector2,BCol:vector){
+        EGP:egpBox(N,BPos,BSize)
+        EGP:egpColor(N,BCol)
+    }
+    function aText(N,String:string,TPos:vector2){
+        EGP:egpText(N,String,TPos)
+        EGP:egpAlign(N,1,1)
+    }
+    function caText(N,String:string,TPos:vector2,Col:vector){
+        aText(N,String,TPos)
+        EGP:egpColor(N,Col)
+    }
+    function dataLine(N2){
+        local N = 17+N2*5
+        if(N2<=Addresses:count()){
+            EGP:egpText(N,N2:toString(),vec2(18,80+32*N2))
+            EGP:egpText(N+1,getAddress(N2),vec2(98,80+32*N2))
+            local Str = ""
+            if(Column3){
+                local Po = gatePos(N2)
+                Str = Po==vec() ? "Unknown" : Po:toString()
+            }
+            else{
+                Str = getName(N2):limitString(24)
+            }
+            EGP:egpText(N+2,Str,vec2(264,80+32*N2))
+            S = isSafe(N2)==1 ?"Safe" : "Unsafe"
+            EGP:egpText(N+3,isSafe(N2) ?S :"Unknown",vec2(408,80+32*N2))
+            EGP:egpBox(N+4,vec2(480,80+32*N2),vec2(56,24))
+            for(I=0,4){
+                EGP:egpAlign(N+I,1,1)
+                EGP:egpColor(N+I,isSafe(N2)>1 ?Red*2 :vec()+255)
+            }
+        }
+        else{
+            for(I=0,4){
+                EGP:egpRemove(N+I)
+            }
+        }
+    }
+    function refreshAddress(G){
+        if(G > 0){
+            if(Screen){
+                dataLine(G)
+            }
+            elseif(G == M){
+                EGP:egpSetText(21,M:toString()+": "+getAddress(M))
+                EGP:egpSetText(41,getName(M):limitString(26))
+                EGP:egpColor(21,isSafe(M)>1 ?Red*2 :vec(255))
+            }
+        }
+    }
+    function renderHorizon(){
+        EGP:egpColor(40,Open ?HorizonCol :vec())
+    }
+    function renderIris(){
+        if(!IrisType){
+            timer("Ir",110)
+        }
+        else{
+            local Alpha = IrisType==2 ? 20 : 200
+            EGP:egpAlpha(39,IrisClosed*Alpha)
+        }
+        EGP:egpSetText(23,"Iris "+(Iris ?"Closed" :"Open"))
+        EGP:egpColor(23,(Iris ?Red :Green))
+    }
+    function renderMode(){
+        EGP:egpSetText(29,Mode ?(Mode==2 ?"Nox" :"Fast") :"Slow")
+    }
+    function renderBlocking(){
+        EGP:egpColor(16,Blocking ?Green*0.5 :Red*0.5)
+    }
+    function renderAuto(){
+        EGP:egpColor(17,Auto ?Green*0.5 :Red*0.5)
+    }
+    function renderStatus(){
+        EGP:egpSetText(Screen ? 8 : 22,GateStatus)
+        K = GateStatus:find("!")
+        EGP:egpColor(Screen ? 8 : 22,(K & GateStatus:index(K-1)!="@") ?Red*2 :Blue*2)
+    }
+    function renderPrev(){
+        EGP:egpSetText(Screen ? 9 : 30,PrevAddress)
+        EGP:egpColor(Screen ? 9 : 30,Table["PrevCol",vector])
+    }
+    function renderTimer(){
+        EGP:egpSetText(Screen ? 10 : 31,Timer)
+    }
+    function renderCursor(){
+        local N = EGP:egpNumObjects()+128
+        EGP:egpPoly(N,vec2(),vec2(10,1),vec2(7,7))
+        EGP:egpColor(N,vec(128))
+        EGP:egpParentToCursor(N)
+    }
+    function renderError(){
+        caText(99,"",vec2(256,256),Red*2)
+        EGP:egpSize(99,25)
+    }    
+    function renderIDCs(N,X:vector2,C:vector){
+        local Start = Table["IDCStart",number] = 105+2*N
+        for(I = 1, numPlayers()){
+            local J = Start+I
+            local P = players()[I,entity]
+            local Name = P:name():limitString(18)
+            local Data = IDCs:getIdcByID(P:steamID())
+            local K = Data[3,number]
+            local Dir = 1#Screen ? 1 : -1
+            switch(K){
+                case 0, Col = C break
+                case 1, Col = Red*2 break
+                case 2, Col = (Red+Green)*2 break
+            }
+            cBox(J,X + vec2(160,(I-1)*32*Dir),vec2(160,32),Screen ?vec(60) :vec(255))
+            caText(J+numPlayers(),Name,X + vec2(160,(I-1)*32*Dir),Data[2,number] ? Col : vec())
+        }
+        Table["MenuObjectCount",number] = numPlayers()*2
+    }
+    function renderMenu(){
+        local Options = array(
+            "Manage IDCs",
+            "Defcon Level: " + Defcon,
+            Macro ? "Stop Macro" : "Start Macro",
+            "Public: " + onoff(Public),
+            "Warning: " + onoff(Warning),
+            "Glyphs: " + onoff(Glyphs),
+            "Local: " + onoff(Local),
+            "Power Save: " + onoff(Timeout),
+            "Toggle Iris"
+        )
+        local OptionNames = array(
+            "IDC",
+            "Defcon",
+            "Macro",
+            "Public",
+            "Warning",
+            "Glyph",
+            "Local",
+            "Timeout",
+            "Iris"
+        )
+        local N = Options:count() #Number of menu options
+        if(Menu){
+            local OptionsStart = 105
+            for(I=1,N){
+                Table[OptionNames[I,string]+"Button",number] = OptionsStart + I
+                Table[OptionNames[I,string]+"Text",number] = OptionsStart + I + N
+            }
+            local Pos = vec2()
+            local TextCol = vec()
+            local BoxCol = vec()
+            if(!Screen){
+                #Flip menu poly
+                EGP:egpPoly(91,vec2(192,448),vec2(320,448),vec2(288,480),vec2(224,480))
+                X = vec2(256,448-32*N+16) #Position of 1st box
+                TextCol = Blue*2
+                BoxCol = vec(255)
+            }
+            else{
+                TextCol = vec(255)
+                BoxCol = vec(60)
+                X = vec2(80,76)
+            }
+            for(I = 1, N){
+                cBox(105+I,X+vec2(0,32)*(I-1),vec2(160,32),BoxCol)
+                EGP:egpText(105+N+I,Options[I,string],X+vec2(-64,32*(I-1)))
+                EGP:egpAlign(105+N+I,0,1)
+                EGP:egpColor(105+N+I,TextCol)
+            }
+            if(P_Defcon){
+                Table["DefconStart",number] = 105+2*N
+                for(I = 1, 5){
+                    local Y = 105+2*N+I
+                    cBox(Y,X + vec2(64+32*I,32),vec2(32,32),Screen ?vec()+60 :vec()+255)
+                    aText(Y+5,I:toString(),X + vec2(64+32*I,32))
+                    EGP:egpColor(Y+5,TextCol)
+                    Table["MenuObjectCount",number] = 10
+                }
+            }
+            elseif(P_IDC){
+                renderIDCs(N,X,TextCol)
+            }
+            else{
+                local J = Table["MenuObjectCount",number]
+                for(I = 1, J){
+                    EGP:egpRemove(105+2*N+I)
+                }
+            }
+            renderCursor()
+        }
+        else{
+            if(!Screen & !first()){
+                EGP:egpPoly(91,vec2(192,480),vec2(224,448),vec2(288,448),vec2(320,480))
+            }
+            for(I = 106, 106 + 2*N + numPlayers()*2){
+                EGP:egpRemove(I)
+            }
+        }
+    }
+    function renderColumn3(){
+        EGP:egpSetText(19,Column3 ? "Position" : "Name")
+        for(I=1,Addresses:count()){
+            N = 19 + I*5
+            local Str = ""
+            if(Column3){
+                local Po = gatePos(I)
+                Str = Po==vec() ? "Unknown" : Po:toString()
+            }
+            else{
+                Str = getName(I):limitString(24)
+            }
+            EGP:egpSetText(N,Str)
+        }
+    }
+    function renderDialScreen(){
+        ##Top Bar
+        EGP:egpBox(1,vec2(256,16),vec2(512,32))
+        EGP:egpPoly(2,vec2(128,32),vec2(384,32),vec2(352,64),vec2(160,64))
+        EGP:egpText(3,"Dialling Computer VI",vec2(256,16)) EGP:egpAlign(3,1,1) EGP:egpColor(3,Blue*2)
+        ##Buttons
+        local ButtonSize = vec2(128,124)
+        cBox(4,vec2(64,128),ButtonSize,vec(60))
+        cBox(5,vec2(64,256),ButtonSize,vec(60))
+        cBox(6,vec2(64,384),ButtonSize,vec(60))
+        cBox(7,vec2(448,128),ButtonSize,vec(60))
+        cBox(8,vec2(448,256),ButtonSize,vec(60))
+        cBox(9,vec2(448,384),ButtonSize,vec(60))
+        ##Indicators
+        local IndSize = vec2(12,124)
+        cBox(10,vec2(112,128),IndSize,Green)
+        cBox(11,vec2(112,256),IndSize,Blue*1.5)
+        cBox(12,vec2(112,384),IndSize,Blue)
+        cBox(13,vec2(400,128),IndSize,Red)
+        cBox(14,vec2(400,256),IndSize,Blue*1.5)
+        cBox(15,vec2(400,384),IndSize,Blue)
+        ##Lower Bar
+        cBox(16,vec2(80,498),vec2(160,28),Blocking ? Green*0.5 : Red*0.5)
+        cBox(17,vec2(432,498),vec2(160,28),Auto ? Green*0.5 : Red*0.5)
+        EGP:egpPoly(18,vec2(128,512),vec2(160,480),vec2(352,480),vec2(384,512))
+        ##Prettiness
+        EGP:egpTriangle(19,vec2(128,64),vec2(128,96),vec2(96,64)) EGP:egpColor(19,vec())
+        EGP:egpTriangle(20,vec2(384,64),vec2(416,64),vec2(384,96)) EGP:egpColor(20,vec())
+        ##Text 1
+        aText(21,"#: ADDRESS",vec2(256,104))
+        aText(41,"GATE NAME",vec2(256,400))
+        refreshAddress(M)
+        caText(22,GateStatus,vec2(256,48),(Inbound ?Red :Blue*2))
+        caText(23,"Iris "+(Iris ?"Closed" :"Open"),vec2(256,496),(Iris ?Red :Green))
+        aText(24,"Dial",vec2(64,128)) EGP:egpSize(24,25)
+        EGP:egpTriangle(25,vec2(64,240),vec2(82,272),vec2(46,272))
+        EGP:egpTriangle(26,vec2(64,400),vec2(46,368),vec2(82,368))
+        aText(27,"Close",vec2(448,128)) EGP:egpSize(27,25)
+        aText(28,"List",vec2(448,256)) EGP:egpSize(28,25)
+        aText(29,Mode ?(Mode==2 ?"Nox" :"Fast") :"Slow",vec2(448,384)) EGP:egpSize(29,25)
+        EGP:egpText(30,PrevAddress,vec2(16,16)) EGP:egpAlign(30,0,1)
+        renderPrev()
+        EGP:egpText(31,Timer,vec2(496,16)) EGP:egpAlign(31,2,1) EGP:egpColor(31,Blue*2)
+        aText(32,"Blocking",vec2(70,498)) EGP:egpSize(32,12)
+        aText(33,"Autoclose",vec2(442,498)) EGP:egpSize(33,12)
+        ##Stargate
+        local GatePos = vec2(256,256)
+        EGP:egpCircle(36,GatePos,vec2(105,105)) EGP:egpColor(36,GateCol*(Color/255))    #Outer ring
+        local MainRing = Table["MainRing",number] = 37
+        EGP:egpCircle(MainRing,GatePos,vec2(95,95)) EGP:egpColor(MainRing,GateCol2*(Color/255))     #Main ring
+        local Divisions = Table["Glyphs",number]
+        Table["DivisionsStart",number] = 42
+        for(I=1,Divisions/2){
+            local N = 41+I
+            EGP:egpBox(N,vec2(),vec2(190,1))
+            EGP:egpAngle(N,360/Divisions*I + 5)
+            EGP:egpParent(N,MainRing)
+            EGP:egpColor(N,GateCol*(Color/255))
+        }
+        local Nx = 42+Divisions/2
+        EGP:egpCircle(38,GatePos,vec2(82,82)) EGP:egpColor(38,GateCol*(Color/255))      #Inner ring
+        EGP:egpCircle(39,GatePos,IrisSize) EGP:egpColor(39,IrisCol*(Color/255))      #Iris
+        EGP:egpCircle(40,GatePos,(IrisClosed & !IrisType) ?vec2() :vec2(76)) EGP:egpColor(40,Open ?HorizonCol :vec())    #Horizon
+        if(IrisType){EGP:egpOrder(39,99) EGP:egpAlpha(39,IrisClosed*100)}
+        local ChevSize = vec2(20,12)
+        local ChevStart = Nx
+        Table["ChevStart",number] = ChevStart
+        for(I=1,9){
+            local N = ChevStart + I
+            local ChevVec = vec2(0,-100)
+            local GlyphVec = vec2(0,-118)
+            local Ang = Rot[I,number]
+            EGP:egpBox(N,ChevVec:rotate(Ang),ChevSize)
+            EGP:egpAngle(N,Ang)
+            EGP:egpParent(N,MainRing - !SGU)
+            aText(N+9,"",GlyphVec:rotate(Ang)+GatePos)
+            EGP:egpFont(N+9,Table["Font",string])
+        }
+        setChevrons()
+        Table["Glyph",number]=Nx+20
+        aText(Table["Glyph",number],"",GatePos) #Glyph Text
+        EGP:egpSize(Table["Glyph",number],100)
+        EGP:egpFont(Table["Glyph",number],Table["Font",string])
+        ## Menu
+        cBox(90,vec2(256,464),vec2(128,32),vec())
+        EGP:egpPoly(91,vec2(192,480),vec2(224,448),vec2(288,448),vec2(320,480))
+        caText(92,"Menu",vec2(256,464),Blue*2)
+        renderError()
+    }
+    
+    function renderListScreen(){
+        ##Top Bar
+        EGP:egpBox(1,vec2(256,16),vec2(512,32))
+        cBox(2,vec2(80,46),vec2(160,28),vec(60))#Menu
+        cBox(3,vec2(432,46),vec2(160,28),vec(60))#Back
+        EGP:egpPoly(4,vec2(128,32),vec2(384,32),vec2(352,64),vec2(160,64))
+        caText(5,"Made by Link320",vec2(256,16),Blue*2)
+        aText(6,"Menu",vec2(80,46))
+        aText(7,"Back",vec2(432,46))
+        caText(8,GateStatus,vec2(256,48),(Inbound ?Red :Blue*2))
+        EGP:egpText(9,PrevAddress,vec2(16,16)) EGP:egpAlign(9,0,1)
+        renderPrev()
+        EGP:egpText(10,Timer,vec2(496,16)) EGP:egpAlign(10,2,1) EGP:egpColor(10,Blue*2)    
+        ##Grid & Button
+        cBox(11,vec2(264,80),vec2(200,30),vec())
+        Table["Column3",number] = 11
+        
+        EGP:egpLine(12,vec2(0,96),vec2(512,96))#Bar
+        EGP:egpLine(13,vec2(36,60),vec2(36,512))#Addr
+        EGP:egpLine(14,vec2(160,60),vec2(160,512))#Name/Pos
+        EGP:egpLine(15,vec2(368,60),vec2(368,512))#Safe
+        EGP:egpLine(16,vec2(448,60),vec2(448,512))#Dial
+        
+        #Grid Headings
+        aText(17,"#",vec2(18,80))
+        aText(18,"Address",vec2(98,80))
+        aText(19,Column3 ? "Position" : "Name",vec2(264,80))
+        aText(20,"Safe",vec2(408,80))
+        aText(21,"Dial",vec2(480,80))
+        #Grid Content
+        for(I=1,min(Addresses:count(),13)){
+            dataLine(I)
+        }
+        Table["ListLength",number] = Addresses:count()
+        #renderError()
+    }
+    
+    function changeScreen(){
+        Menu = 0
+        EGP:egpSaveFrame(!Screen)
+        EGP:egpClear()
+        timer("Clear",10)
+    }
+    function renderScreen(){
+        if(Screen){
+            if(Table["Saved1",number]==1){
+                EGP:egpLoadFrame(1)
+                renderPrev()
+                renderTimer()
+                renderStatus()
+                renderMenu()
+                renderError()
+                for(I=1,Table["ListLength",number]){
+                    dataLine(I)
+                }
+                Table["ListLength",number] = Addresses:count()
+            }
+            else{
+                renderListScreen()
+                Table["Saved1",number] = 1
+            }
+        }
+        else{
+            if(Table["Saved0",number]==1){
+                EGP:egpLoadFrame(0)
+                refreshAddress(M)
+                setChevrons()
+                renderAuto()
+                renderBlocking()
+                renderTimer()
+                renderPrev()
+                renderHorizon()
+                renderIris()
+                renderStatus()
+                renderMode()
+                renderMenu()
+                renderError()
+            }
+            else{
+                renderDialScreen()
+                Table["Saved0",number] = 1
+            }
+        }
+        renderCursor()
+        timer("denied",600)
+    }
+    
+    function string array:parseAddress(N){
+        local S = This[N,string]
+        local Ad = Nm = ""
+        local Bl = (S:index(1)==("1"))*3
+        for(I=Bl ?3 :1,S:length()){
+            if(S:index(I) == " "){
+                if(I > 2){
+                    Ad = S:sub(Bl ?3 :1,I-1) #Get the address
+                    Nm = S:sub(I+1,S:length())#Get the name sans period
+                    if(Nm == "N/A"){Nm = ""}
+                    break
+                }
+                else{ #If there is a number before the address, it's blocked
+                    Bl = 3
+                }
+            }
+        }
+        local Pos = Table[Ad,array][3,vector]
+        local Bl2 = Table[Ad,array][4,number]
+        Bl = Bl2? Bl2 : Bl
+        Table[Ad,array]=array(Ad,Nm,Pos,Bl) #Address,Name,Position,IsBlocked
+        return Ad
+    }
+    function populateAddresses(){
+        Addresses = table()
+        #Get the address list
+        AddressList = Stargate:stargateAddressList()
+        #For each address;
+        for(I=1,AddressList:count()){
+            #Parse the information
+            local Add = AddressList:parseAddress(I)
+            #Add it to the array
+            Addresses[I,array] = Table[Add,array] #Data
+            if(maxquota()<15000){
+                break
+            }
+        }
+        for(I=1,CustomAddresses:count()){
+            Addresses:pushArray(array(CustomAddresses[I,string]))
+        }
+        if(changed(Addresses:count())){
+            refreshAddress(M)
+        }
+    }
+    
+    function dialAddress(A:string,M1){
+        if(A:length() > 5){
+            Stargate:stargateDial(A,M1)
+            Dialling = 1
+            PrevAddress = A
+        }
+        else{
+            print("ERROR: Address too short")
+        }
+    }
+    function dialAddress(N,M1){
+        if(N <= Addresses:count()){
+            A3 = getAddress(N)
+            dialAddress(A3,M1)
+        }
+    }
+    function dialAddress(N){
+        dialAddress(N,Mode)
+    }
+    function closeGate(){
+        Stargate:stargateClose()
+    }
+    function number parseMode(S:string){
+        if(S:toNumber()){
+            N1 = S:toNumber()
+        }
+        elseif(S == "slow") {N1 = 0}
+        elseif(S == "fast") {N1 = 1}
+        elseif(S == "nox")  {N1 = 2}
+        else {N1 = Mode}
+        return N1
+    }
+    function number parseDEFCON(S:string){
+        if(S:toNumber() < 6 & S:toNumber() > 0){
+            N1 = S:toNumber()
+        }
+        else{
+            if(S != ""){print("Invalid DEFCON level!")}
+            N1 = Defcon
+        }
+        return N1
+    }
+    #button(Button ID)
+    function number button(ID:number){
+        BPos = EGP:egpPos(ID)
+        BSize = EGP:egpSize(ID)/2
+        return inrange(Cursor,BPos-BSize,BPos+BSize)
+    }
+    #gridButton()
+    function void gridButton(){
+        N = ceil((Cursor:y()-96)/32)
+        if(N<=Addresses:count()){
+            if(Cursor:x()>448 & !Pause){
+                dialAddress(N)
+            }
+            else{
+                M = N
+            }
+        }
+    }
+    #defconButton()
+    function number defconButton(){
+        local D = 0
+        local N = Table["DefconStart",number]
+        if(button(N+1)){D = 1}
+        elseif(button(N+2)){D = 2}
+        elseif(button(N+3)){D = 3}
+        elseif(button(N+4)){D = 4}
+        elseif(button(N+5)){D = 5}
+        return D
+    }
+    #idcButton()
+    function number idcButton(){
+        local W = 0
+        local N = Table["IDCStart",number]
+        for(I = 1, numPlayers()){
+            if(button(N+I)){
+                W = 1
+                local P = players()[I,entity]
+                if(P != Owner){
+                    local Data = IDCs:getIdcByName(P:name())
+                    local HasIDC = Data[2,number]
+                    local K = 0
+                    if(HasIDC){
+                        K = Data[3,number]
+                        K++
+                        if(K>2){K=0}
+                        setIDC(P:name(),HasIDC:toString(),K)
+                    }
+                    switch(K){
+                        case 0, Col = (Screen ?vec()+255 :Blue*2) break
+                        case 1, Col = Red*2 break
+                        case 2, Col = (Red+Green)*2 break
+                    }
+                    EGP:egpColor(N+I+numPlayers(),HasIDC ? Col :vec())
+                }
+                break
+            }
+        }
+        return W
+    }
+    function playIrisSound(Hit){
+        if(Hit){
+            soundPlay(2,1,"/buttons/blip2.wav")
+        }
+        else{
+            soundPlay(2,1,"/buttons/button14.wav")
+        }
+    }
+    #checkGate()
+    function void checkGate(){
+        if(Open){
+            local E = Table["ConnectedEnt",entity]
+            if(!E){
+                Pos = vec()
+                #ifdef G:target()
+                    E = stargate(Gate):target():entity()
+                #else
+                    findByClass("event_horizon")
+                    local N = findSortByDistance(Gate:pos())
+                    local E = findResult(N) #Finds the furthest away active gate (More than 2??)
+                #endif
+                Table["ConnectedEnt",entity] = E
+            }
+            if(E){
+                Pos = round(E:pos(),0)
+                rangerFilter(players())
+                R = rangerOffsetHull(100,Pos-E:forward()*20,E:forward(),vec(20))
+                local I = Table["CurAddress",number]
+                if(!I){
+                    local Add = Stargate["Dialing Address",string]
+                    PrevAddress = Add
+                    for(J=1,Addresses:count()){
+                        if(Add:find(getAddress(J))){
+                            I = J
+                            Table["CurAddress",number] = J
+                            PrevAddress = getAddress(J)
+                            break
+                        }
+                    }
+                }
+                if((gatePos(I) != Pos) & Pos!=vec()){
+                    setGatePos(I,Pos)
+                }
+                if(isSafe(I) != R:hit()+1){
+                    isSafe(I,R:hit()+1)
+                    local N = Screen ? 9 : 30
+                    Table["PrevCol",vector] = R:hit() ? Red*2 : Blue*2
+                    EGP:egpColor(N,Table["PrevCol",vector])
+                    if(!Inbound){
+                        playIrisSound(R:hit())
+                    }
+                }
+                elseif(changed(Open) & isSafe(I)>1 & !Inbound){
+                    playIrisSound(1)
+                }
+                refreshAddress(I)
+            }
+        }
+    }
+    #resetData()
+    function void resetData(){
+        Addresses = table()
+        populateAddresses()
+        renderScreen()
+        print("Data Reset")
+    }
+    #errorMessage(Error string)
+    function void errorMessage(Err:string){
+        soundPlay(3,1,"/buttons/button16.wav")
+        EGP:egpSetText(99,Err)
+        EGP:egpAlpha(99,255)
+        timer("Denied",2000)
+    }
+    
+    
+}
+
+interval(50)
+timer("sec",1000)
+timer("update",10000)
+
+if(clk("Clear")){renderScreen()}
+if(clk("Denied")){
+    EGP:egpAlpha(99,0)
+}
+if (clk("NoDial")){
+    Pause = 0
+}
+if(clk("update")){
+    populateAddresses()
+}
+##################################################################  FIRST  ##############################################################################
+if(first() | duped()){
+    runOnChat(1)
+    runOnFile(1)
+    runOnLast(1)
+    Owner = owner()
+    Vol = 10
+    
+    Timer = "00:00"
+    Status = "Idle"
+    Red = vec(100,0,0)
+    Green = vec(0,100,0)
+    Blue = vec(0,0,100)
+    
+    ### Global Table stored variables ###
+    GTable = gTable(Owner:name())
+    local GTable2 = GTable["Table",table]
+    M = GTable2["M",number]
+    M = M ?M :1
+    Mode = GTable2["Mode",number]
+    Blocking =GTable2["Blocking",number]
+    Auto = GTable2["Auto",number]
+    PrevAddress = GTable2["Prev",string]
+    Init = GTable2["Init",number]
+    Dialling = GTable2["Dialling",number]
+    H = GTable2["H",number]
+    IDCs = GTable2["IDCs",table]
+    Iris = GTable2["Iris",number]
+    Screen = GTable2["Screen",number]
+    Defcon = GTable2["Defcon",number]
+    Defcon = Defcon ?Defcon :3    
+    Addresses = GTable2["Addresses",table]
+    Public = GTable2["Public",number]
+    Warning = GTable2["Warning",number]
+    Local = GTable2["Local",number]
+    Glyphs = GTable2["Glyphs",number]
+    Timeout = GTable2["Timeout",number]
+    Table = GTable2["Table",table]
+    Table["Saved0",number] = 0
+    Table["Saved1",number] = 0
+    local PCol = Table["PrevCol",vector]
+    Table["PrevCol",vector] = PCol ? PCol : Blue*2
+    Table["SEND",string] = ":"
+    Table["REQ",string] = "?"
+    
+    ##Chevron Positions
+    Rot[1,number] = 40
+    Rot[2,number] = 80
+    Rot[3,number] = 120
+    Rot[4,number] = 240
+    Rot[5,number] = 280
+    Rot[6,number] = 320
+    Rot[7,number] = 0
+    Rot[8,number] = 160
+    Rot[9,number] = 200
+    
+    Table["FileName",string] = Owner:steamID():lower():replace(":","")+"idcs.txt"
+}
+
+### Various colours for EGP ###
+if(changed(Stargate) & ->Stargate){
+    Stargate:stargateSetLocal(Local)
+    Stargate:stargateSetBlocked(Blocking)
+    Gate = Stargate:entity()
+    Color = Gate:getColor()
+    Open = Stargate["Open",number]
+    Stargate["Ring Speed Mode",number] = 3
+    SG1 = Gate:type():find("1") | Gate:type():find("movie")
+    SGU = Gate:type():find("u")
+    if(SG1){
+        GateCol = vec(90)
+        GateCol2 = vec(100)
+        ChevCol = vec(255,130,0)
+        ChevCol2 = vec(90,60,50)
+        Table["Glyphs",number] = 40
+        Table["Font",string] = "Stargate Address Glyphs SG1"
+    }
+    elseif(SGU){
+        GateCol = vec(40)
+        GateCol2 = vec(45)
+        ChevCol = vec(255)
+        ChevCol2 = vec(120)
+        Color = vec(255)
+        Table["Glyphs",number] = 45
+        Table["Font",string] = "Stargate Address Glyphs U"
+    }
+    else{
+        GateCol = vec(60)
+        GateCol2 = vec(30,40,70)
+        ChevCol = vec(60,170,255)
+        ChevCol2 = vec(35,45,60)
+        Table["Glyphs",number] = 36
+        Table["Font",string] = "Stargate Address Glyphs Atl"
+    }
+    HorizonCol = vec(40,75,160)
+    populateAddresses()
+    if(->EGP){
+        renderScreen()
+    }
+}
+if(changed(GateIris) & ->GateIris){
+    if(GateIris:entity():type() == "goauld_iris"){
+        IrisType = 2
+    }
+    else{
+        IrisType = !GateIris:entity():model():find("iris")>0
+    }
+    switch(IrisType)
+    {
+        case 0,
+            IrisCol = vec(130)
+            IrisSize = vec2(76)
+            break
+        case 1,
+            IrisCol = vec(100,160,255)
+            IrisSize = vec2(76)
+            break
+        case 2,
+            IrisCol = vec(200,160,50)
+            IrisSize = vec2(112)
+            break
+    }
+    EGP:egpColor(39,IrisCol)
+    EGP:egpSize(39,IrisSize)
+}
+
+if(changed(EGP) & ->EGP & !egpQueue()){
+    EGP:egpClear()
+    renderScreen()
+}
+
+if(changed(owner()) & owner()){
+    Owner = owner()
+}
+
+
+########################################################################  WIRELINKS  ##################################################################
+
+Active = Stargate["Active",number]
+Open = Stargate["Open",number]
+Chevron = Stargate["Chevron",number]
+Inbound = Stargate["Inbound",number]
+Chevrons = Stargate["Chevrons",string]
+if(changed(Close) & !(first())){
+    Stargate["Close",number] = Close
+}
+if(changed(Auto)){
+    Stargate["Disable Autoclose",number] = Auto
+}
+
+EGPUser = EGP["User",entity]
+
+GateIris["Activate",number] = Iris
+IrisClosed = GateIris["Activated",number]
+
+
+
+
+####################################################################  FILE READING  ####################################################################
+if(first()){
+    fileLoad(Table["FileName",string])
+    print("Loading IDCs")
+}
+if(fileClk()){
+    if(fileClk(Table["FileName",string]) & fileLoaded()){
+        IDCs = vonDecodeTable(fileRead())
+        print("IDCs Loaded")
+        local Data = IDCs[Owner:steamID(),array]
+        if(Data[4,string] == ""){
+            print("You currently have no chat IDC")
+        }
+    }
+    elseif(fileClk(Table["FileName",string])){
+        switch(fileStatus())
+        {
+            case 2,
+                print("ICD file request timed out")
+                break
+            case 3,
+                print("No IDCs found")
+                break
+            case 4,
+                print("IDC file transfer error")
+                break
+            default,
+                print("Unknown error")  
+        }
+    }
+    Ready = 1
+}
+
+
+
+########################################################################  CHAT  ######################################################################
+
+if(chatClk()){
+    Player = lastSpoke()
+    if(isAllowed(Player)){
+        hideChat(1)
+        ID = lastSaid():index(1)
+        Line = lastSaid():sub(2):lower():explode(" ")
+        Command = Line[1,string]
+        if(ID == "/"){
+            Var1 = Line[2,string]
+            Var2 = Line[3,string]
+            if(Command == "help"){
+                
+            }
+            elseif(Command == "info"){
+                
+            }
+            elseif(Command == "dial"){
+                dialAddress(Var1:upper(), parseMode(Var2))
+            }
+            elseif(Command == "close" | Command == "stop"){
+                closeGate()
+            }
+            elseif(Command == "mode"){
+                Mode = parseMode(Var1)
+                print("Mode now at " + Mode)
+            }
+            elseif(Command == "public"){
+                Public = !Public
+                print("Public access " + (Public ?"enabled" :"disabled"))
+            }
+            elseif(Command == "defcon"){
+                Defcon = parseDEFCON(Var1)
+                print("DEFCON Level " + Defcon)
+            }
+            #Redial
+            elseif(Command == "redial"){
+                dialAddress(PrevAddress,Mode)
+            }
+            elseif(Command == "alarm"){
+                Vol = !Vol
+                soundVolume(1,Vol*10)
+            }
+            #Auto
+            elseif(Command == "auto" | Command == "autoclose"){
+                Auto = !Auto
+                print("Gate Autoclose: "+(Auto ?"Diabled" :"Enabled"))
+            }
+            elseif(Command == "reset"){
+                resetData()
+            }
+            elseif(Command == "debug"){
+                print("You broke it moron!")
+            }
+            elseif(Command == "refresh"){
+                Table["Saved0",number] = 0
+                Table["Saved1",number] = 0
+                EGP:egpClear()
+                renderScreen()
+            }
+            #Add xxxxxx
+            elseif(Command == "add"){
+                if(Var1:length() > 5 & Var1:length() <= 9){
+                    CustomAddresses:pushString(Var1:upper())
+                    populateAddresses()
+                    refreshAddress(Addresses:count())
+                    print(Var1:upper() + " has been added to the database")
+                    #saveFile()
+                }
+                else{
+                    print("Invalid Address")
+                }
+            }
+            #Remove n/xxxxxx
+            elseif(Command == "remove"){
+                if(Var1:toNumber() != 0 & Var1:toNumber() <= Addresses:count()){
+                    K = Var1:toNumber()-AddressList:count()
+                    if(K>0){
+                        print(K+AddressList:count() + ": " + CustomAddresses[K,string] + ", has been removed from the database")
+                        CustomAddresses:remove(K)
+                        populateAddresses()
+                        refreshAddress(K+AddressList:count())
+                    }
+                    else{
+                        print("Invalid Memory Number")
+                    }
+                }
+                elseif(Var1:length() > 5 & Var1:length() <= 9){
+                    for(K=1,CustomAddresses:count()){
+                        if(CustomAddresses[K,string] == Var1:upper()){
+                            print(K+AddressList:count() + ": " + CustomAddresses[K,string] + ", has been removed from the database")
+                            CustomAddresses:remove(K)
+                            populateAddresses()
+                            refreshAddress(K+AddressList:count())
+                            #saveFile()
+                            break
+                        }
+                        elseif(K==CustomAddresses:count()){
+                            print("Invalid Memory Number /Gate Address")
+                        }
+                    }
+                }
+                else{
+                    print("Invalid Memory Number /Gate Address")
+                }
+                            
+            }
+            #Replace n/xxxxxx xxxxxx
+            elseif(Command == "replace"){
+                New = Var2
+                if(New:length() > 5 & New:length() <= 9){
+                    if(Var1:toNumber() != 0 & Var1:toNumber() <= Addresses:count()){
+                        K = Var1:toNumber()-AddressList:count()
+                        if(K>0){
+                            print(K+AddressList:count()+": "+CustomAddresses[K,string]+", has been replaced with "+New:upper())
+                            CustomAddresses[K,string] = New:upper()
+                            populateAddresses()
+                            refreshAddress(K+AddressList:count())
+                        }
+                        else{
+                            print("Invalid Memory Number")
+                        }
+                    }
+                    elseif(Var1:length() > 5 & Var1:length() <= 9){
+                        for(K=1,CustomAddresses:count()){
+                            if(CustomAddresses[K,string] == Var1:upper()){
+                                print(K+AddressList:count()+": "+CustomAddresses[K,string]+", has been replaced with "+New:upper())
+                                CustomAddresses[K,string] = New:upper()
+                                populateAddresses()
+                                refreshAddress(K+AddressList:count())
+                                #saveFile()
+                                break
+                            }
+                            elseif(K==CustomAddresses:count()){
+                                print("Invalid Gate Address")
+                            }
+                        }
+                    }
+                    else{
+                        print("Invalid Existing Address")
+                    }
+                }
+                else{
+                    print("Invalid New Address")
+                }
+                            
+            }
+            elseif(Player == Owner){
+                if(Command == "setidc"){
+                    setIDC(Var1,Var2)
+                    local Name = findPlayerByName(Var1):name()
+                    print(Name + "'s IDC set")
+                }
+                elseif(Command == "idcstatus" & Player == Owner){
+                    setIDCStatus(Var1,Var2:toNumber())
+                }
+            }
+        }
+        elseif(ID == Table["SEND",string] & Player == Owner){ #IDC
+            local SteamID = Owner:steamID()
+            local Data = IDCs[SteamID,array]
+            if(Data[4,string] == Command){
+                Secure = 1
+                print("IDC Acccepted")
+            }
+            elseif(Command:length() > 2){
+                Secure = 0
+                print("IDC Rejected")
+            }
+            else{
+                hideChat(0)
+            }
+        }
+        elseif(ID == Table["REQ",string] & Player == Owner){ #Request
+            local Name = Owner:name()
+            local SteamID = Owner:steamID()
+            local Data = IDCs[SteamID,array]
+            if(Command == Table["REQ",string]){
+                print("Your IDC is: "+Data[4,string])
+            }
+            elseif(Command:length() > 2){
+                local NumIDC = Data[2,number]
+                IDCs[SteamID,array] = array(SteamID,NumIDC,2,Command)
+                writeIDCs()
+                print("New IDC set as: "+Command)
+            }
+            else{
+                hideChat(0)
+            }
+        }
+        else{
+            hideChat(0)
+        }
+    }
+}
+
+
+
+
+##########################################################################  IRIS  #####################################################################
+
+#Unstable
+if((($Chevron > 0 & Chevron > 3)|(changed(Active)&Chevron>1)) & !(first()) & !Open){
+    Unstable = 1
+    Secure = 0
+}
+if($Chevron > 1 & Chevron >=7){
+    Secure = Dialling|(Public & !Inbound)
+}
+if(changed(Open) & Open & !first()){
+    timer("Kawoosh",3500)
+}
+elseif(clk("Kawoosh") | ($Chevron<0 & Chevron == 3)){
+    Unstable = 0
+}
+
+#Iris
+if(changed(Active) & !Open & !Active){
+    Secure = 1
+    Unstable = 0
+    Dialling = 0
+}
+if(Active & Dialling & !Inbound){
+    Secure = 1
+}
+switch(Defcon){
+    case 5,
+        Iris = 0
+        break
+    case 4,
+        Iris = Unstable
+    case 3,
+    case 2,
+        Iris = Unstable|!Secure
+        break
+    case 1,
+        Iris = 1
+        break
+}
+if(Macro){
+    Iris = 1
+}
+if(changed(Open) & Warning & ->GateIris & Inbound & Ready & Open & !Secure & Iris){
+    local Message = (IrisType ? "SHIELD RAISED" : "IRIS CLOSED")
+    #ifdef botSay(string,string,vector,array)
+        botSay("INBOUND",Owner:name(),vec(),array(vec(255,0,0),Message))
+    #else
+        concmd("say [INBOUND CONNECTION - " + Message + "]")
+    #endif
+}
+elseif(changed(IrisClosed) & Warning & ->GateIris & Inbound & Ready & Open & !IrisClosed){
+    local Message = (IrisType ? "SHIELD LOWERED" : "IRIS OPENED")
+    #ifdef botSay(string,string,vector,array)
+        botSay("SECURE",Owner:name(),vec(),array(vec(0,255,0),Message))
+    #else
+        concmd("say [SECURE - " + Message + "]")
+    #endif
+}
+
+if(changed(Defcon)){
+    Sounds  = Defcon < 3
+}
+
+if(changed(IrisClosed) & !Dialling & Active & !first()){
+    print("Iris " + (IrisClosed ?"Raised" :"Lowered"))
+}
+
+##Sounds
+if(changed(Sounds) & !Sounds){
+    soundPurge()
+}
+elseif(Sounds){
+    if((changed(Inbound) & Inbound) | (changed(Secure) & !Secure & !Vol)){
+        soundPlay(1,0,"/alarm/sgc_offworld-alarm.wav")
+        Vol = 1
+    }
+    elseif((changed(Active) & !Active) | (changed(Secure) & Secure)){
+        soundStop(1)
+        Vol = 0
+    }
+}
+## Overloader Warning
+if(Inbound & changed(Overloading) & Overloading){
+    soundPlay(1,0,"/alarm/sga_midway_selfdestruct.wav")
+    Vol = 1
+}
+elseif(changed(Overloading) & !Overloading){
+    soundPurge()
+}
+
+
+
+#######################################################################  IDC SYSTEM ###################################################################
+if(clk("sec")){
+    if(changed(IrisComp) & ->IrisComp){
+        IrisComp["Don't Auto-Open",number] = 1
+        IrisComp["GDO Status",number] = 1
+        IrisComp["Auto-close",number] = 0
+    }
+    if(->IrisComp){
+        Code = IrisComp["Received Code",number]
+        
+        if(changed(Code) & Code){
+            local CodeStatus = IrisComp["Code Status",number]
+            local Data = IDCs:getIdcByCode(Code)
+            local Player = getPlayerByID(Data[1,string])
+            if(Player){
+                Secure = Data[3,number] != 1
+                print(Player:name() + "'s IDC")
+                GateStatus = Player:name() + "'s IDC"
+            }
+            else{
+                print("Invalid IDC Recieved")
+            }
+        }
+    }
+}
+
+
+
+###################################################################  FUNCTIONALITY  ###################################################################
+
+##Buttons
+if(clk()){
+    if (changed(P_Dial) & P_Dial){
+        dialAddress(M)
+    }
+    if (changed(P_Up+P_Down) & (P_Up|P_Down)){ #Up/Down
+        M += (P_Up-P_Down)
+    }
+    if (changed(M) | changed(Addresses:count())){
+        if(M > Addresses:count()){
+            M = 1
+        }
+        elseif(M == 0){
+            M = Addresses:count() ?Addresses:count() :1
+        }
+        Pos = gatePos(M)
+    }
+    if (P_Close){ #Close
+        closeGate()
+        Macro = 0
+    }
+    if (changed(P_List) & P_List){ #List
+        Menu = 0
+        timer("NoDial",500)
+        Pause = 1
+        Screen = 1
+    }
+    if (changed(P_Mode) & P_Mode){ #Mode
+        Mode++
+        if(Mode>2){Mode = 0}
+    }
+    if (changed(P_Blocking) & P_Blocking){ #Blocking
+        Blocking = !Blocking
+        Close = 0
+    }
+    if (changed(P_Auto) & P_Auto){ #Auto
+        Auto = !Auto
+    }
+    if (changed(P_Menu) & P_Menu){ #Menu
+        Menu = !Menu
+        P_IDC = P_Defcon = 0
+    }
+    
+    
+    if(changed(Chevron) & Chevron < 0 & Mode < 2){
+        if(Chevrons:index(7)=="0"){
+            errorMessage("Insufficient Power")
+        }
+        else{
+            errorMessage("Busy Signal")
+        }
+    }
+}
+if(clk("sec")){
+    if (changed(Blocking)){
+        Stargate:stargateSetBlocked(Blocking)
+    }
+    
+    ##Gate Statuses
+    if(!SGU){
+        Color = Gate:getColor()
+    }
+    if($Color:z()>=0){Overloading = 0}
+    elseif($Color:z()<0){Overloading = 1}
+    
+    if(changed(Color) | Overloading){ #Overloading
+        if(!Screen){
+            EGP:egpColor(36,GateCol*(Color/255))
+            EGP:egpColor(37,GateCol2*(Color/255))
+            EGP:egpColor(38,GateCol*(Color/255))
+            EGP:egpColor(39,IrisCol*(Color/255))
+            local A = Table["DivisionsStart",number]
+            for(I=0,Table["Glyphs",number]/2){
+                EGP:egpColor(A+I,GateCol*(Color/255))
+            }
+            setChevrons()
+        }
+        if(Overloading & ->Stargate){
+            GateStatus = "OVERLOAD AT "+round(100 - Color:z()/255*100)+"%!"
+        }
+    }
+    elseif(Inbound & Secure){
+        #Don't set Gate Status
+    }
+    elseif(Macro){
+        GateStatus = "Gate Macro Active"
+        if(!Open){
+            Table:remove("ConnectedEnt")
+        }
+    }
+    elseif(!Active){
+        GateStatus = "Idle"
+        Timer = "00:00"
+        Table:remove("ConnectedEnt")
+        Table["CurAddress",number] = 0
+    }
+    elseif(Active & Inbound){
+        GateStatus = "Incoming Wormhole!"
+    }
+    elseif(!Open){
+        if(!Dialling){
+            GateStatus = "External Dialout in Progress!"
+            PrevAddress = "UNKNOWN"
+        }
+        else{
+            GateStatus = "Dialling "+PrevAddress
+        }
+    }
+    elseif(Dialling){
+        GateStatus = "Connection Established"
+    }
+    else{
+        GateStatus = "External Address Dialled!"
+    }
+}
+
+if(Open){
+    Time = curtime()-Init
+    Min = floor(Time/60,0)
+    Sec = floor(Time,0) - Min*60
+    Timer = ((Min<10)?"0" :"")+Min:toString()+((Sec<10)?":0" :":")+Sec:toString()
+    if(Timeout & !Inbound & Chevron==9 & Time >= 10){
+        closeGate()
+    }
+}
+
+## Gate Checking
+if(Open & clk("check") & !Macro){
+    checkGate()
+    timer("check",2000)
+}
+
+## Macro
+if(changed(Macro) & Macro & Open){
+    closeGate()
+}
+if(changed(Open) & Open){ #Gate opens, stop fail timer and
+    Init = curtime()
+    checkGate()
+    timer("check",2000)
+    stoptimer("Fail")
+    Wait = 0
+    timer("Macro",3800)
+}
+if(Macro & Macro <= Addresses:count() & !Wait){
+    if(!Active){ #If the gate is inactive, dial.
+        Table["CurAddress",number] = Macro
+        dialAddress(Macro,1)
+        timer("Fail",15000) #Allows time for redial
+        Wait = 1
+    }
+    if(clk("Macro") | clk("Fail")){ #Close the gate and increment
+        Wait = 0
+        Macro++
+    }
+    if(Macro > Addresses:count() | Inbound){ #Stop the macro at end/inbound
+        Macro = Wait = 0
+        closeGate()
+    }
+}
+else{Wait = 0}
+
+
+
+
+
+###############################################################  EGP SCREEN  #########################################################################
+if(changed(Screen) & !first()){
+    changeScreen()
+}
+
+if(Screen == 0){
+    #Chevrons
+    #Goddamn SGU stuff
+    if(SGU | SG1){
+        local Speed = SGU ? 5.2 : 2.5
+        if(changed(Active)){
+            setChevrons()
+            timer("spin",10)
+        }
+        local Divs = Table["Glyphs",number]
+        if(Active & !Open & clk("spin")){
+            local RingRot = -Stargate["Ring Rotation",number]
+            if(SGU & changed(Chevron) & Chevron){
+                local P = vec2(0,-87):rotate(Ang)
+                local N = 60 + Divs + Chevron
+                EGP:egpBox(N,P,vec2(1,9))
+                EGP:egpAngle(N,Ang)
+                EGP:egpParent(N,Table["MainRing",number])
+            }
+            Ang+=Speed*RingRot
+            if(changed(Ang)){
+                EGP:egpAngle(37,Ang)
+            }
+            timer("spin",100)
+        }
+        elseif(changed(Active) & !Active){
+            Ang = SGU ? 0 : Ang
+            EGP:egpAngle(37,Ang)
+            for(I=1,9){
+                EGP:egpRemove(60+Divs+I)
+            }
+        }
+    }
+    if(changed(Chevrons) | changed(Glyphs)){
+        setChevrons()
+    }
+    
+    if(Glyphs & (changed(Stargate["Dialing Symbol",string]) | clk("sec"))){
+        EGP:egpSetText(Table["Glyph",number],Stargate["Dialing Symbol",string])
+    }
+    #Horizon
+    if(changed(Open)){
+        timer("H",100)
+    }
+    if(H!=Open & clk("H")){
+        H += 0.05*(Open>H ?1 :-1)
+        EGP:egpColor(40,HorizonCol*H)
+        timer("H",100)
+    }
+    if(changed(IrisClosed)){
+        renderIris()
+    }
+    if(Ir != IrisClosed & clk("Ir")){
+        Ir += 0.05*(IrisClosed>Ir ?1 :-1)
+        EGP:egpSize(40,vec2((1-Ir)*76))
+        timer("Ir",110)
+    }
+    
+    #Button Indicators
+    if(changed(P_Dial)){
+        EGP:egpColor(10,Green+Green*P_Dial)
+    }
+    elseif(changed(P_Up)){
+        EGP:egpColor(11,Blue*1.5+Blue*P_Up)
+    }
+    elseif(changed(P_Down)){
+        EGP:egpColor(12,Blue+Blue*P_Down)
+    }
+    elseif(changed(P_Close)){
+        EGP:egpColor(13,Red+Red*P_Close)
+    }
+    elseif(changed(P_List)){
+        EGP:egpColor(14,Blue*1.5+Blue*P_List)
+    }
+    elseif(changed(P_Mode)){
+        EGP:egpColor(15,Blue+Blue*P_Mode)
+    }
+    
+    #Fast/Slow
+    if(changed(Mode)){
+        renderMode()
+    }
+    
+    #Addresses
+    if(changed(M)){
+        refreshAddress(M)
+    }
+    if(changed(Blocking)){
+        renderBlocking()
+    }
+    if(changed(Auto)){
+        renderAuto()
+    }
+    if(changed(PrevAddress)){
+        renderPrev()
+    }
+    if(changed(Timer)){
+        renderTimer()
+    }
+    if(changed(GateStatus)){
+        renderStatus()
+    }
+}
+elseif(Screen == 1){
+    if(changed(GateStatus)){
+        renderStatus()
+    }
+    if(changed(PrevAddress)){
+        renderPrev()
+    }
+    if(changed(Timer)){
+        renderTimer()
+    }
+    #Horizon Changing
+    if(changed(Open)){
+        timer("H",200)
+    }
+    if(H!=Open & clk("H")){
+        H += 0.1*(Open>H ?1 :-1)
+        timer("H",200)
+    }
+}
+##Menu
+if(changed(Menu + P_Defcon + P_IDC)){
+    renderMenu()
+}
+if(Menu){
+    local N = 0
+    if(changed(Macro)){
+        N = Table["MacroText",number]
+        EGP:egpSetText(N,Macro ?"Stop Macro" :"Start Macro")
+    }
+    elseif(changed(Public)){
+        N = Table["PublicText",number]
+        EGP:egpSetText(N,"Public: " + onoff(Public))
+    }
+    elseif(changed(Warning)){
+        N = Table["WarningText",number]
+        EGP:egpSetText(N,"Warning: " + onoff(Warning))
+    }
+    elseif(changed(Glyphs)){
+        N = Table["GlyphText",number]
+        EGP:egpSetText(N,"Glyphs: " + onoff(Glyphs))
+        if(!Screen){
+            local Glyph = Glyphs ? Stargate["Dialed Glyph",string] : ""
+            EGP:egpSetText(Table["Glyph",number],Glyph)
+        }
+    }
+    elseif(changed(Local)){
+        N = Table["LocalText",number]
+        EGP:egpSetText(N,"Local: " + onoff(Local))
+        Stargate:stargateSetLocal(Local)
+    }
+    elseif(changed(Timeout)){
+        N = Table["TimeoutText",number]
+        EGP:egpSetText(N,"Power Save: " + onoff(Timeout))
+    }
+    elseif(changed(Defcon)){
+        N = Table["DefconText",number]
+        EGP:egpSetText(N,"Defcon Level: "+Defcon)
+    }
+}
+
+
+
+
+#####################################################################  EGP TOUCH SCREEN  #############################################################
+
+if(changed(EGPUser) & EGPUser){
+    if(isAllowed(EGPUser)){
+        User = EGPUser
+    }
+    else{
+        User = noentity()
+        errorMessage("Public Access Disabled")
+    }
+}
+Cursor = EGP:egpCursor(User)
+Use = User:keyUse()
+## Menu Buttons
+if(changed(Use) & Use & Menu){
+    if(isAllowed(User)==1){
+        if(button(Table["IDCButton",number])){P_IDC = !P_IDC, P_Defcon = 0} #IDC view
+        elseif(button(Table["DefconButton",number])){P_Defcon = !P_Defcon, P_IDC = 0} #Defcon
+        elseif(P_Defcon & defconButton()){ #Defcon select
+            Defcon = defconButton()
+            Skip = 1
+            P_Defcon = 0
+        }
+        elseif(button(Table["MacroButton",number])){ #Macro
+            Macro = !Macro
+        }
+        elseif(button(Table["PublicButton",number])){ #Public
+            Public = !Public
+        }
+        elseif(button(Table["WarningButton",number])){ #Warning
+            Warning = !Warning
+        }
+        elseif(button(Table["IrisButton",number])){ #Iris
+            Secure = !Secure
+        }
+        elseif(button(Table["GlyphButton",number])){ #Glyphs
+            Glyphs = !Glyphs
+        }
+        elseif(button(Table["LocalButton",number])){ #Local
+            Local = !Local
+        }
+        elseif(button(Table["TimeoutButton",number])){ #Local
+            Timeout = !Timeout
+        }
+        elseif(P_IDC){
+            if(idcButton()){
+                Skip = 1
+            }        
+        }
+    }
+    else{
+        errorMessage("Menu Access Denied")
+    }
+}
+## Dial Screen Buttons
+elseif(Screen == 0 & !Skip){
+    if(changed(Use) & !Use){
+        P_Dial=P_Up=P_Down=P_Close=P_Close=P_List=P_Mode=P_Blocking=P_Auto=P_Menu=0
+    }
+    elseif(Use){
+        P_Dial = button(4)
+        P_Up = button(5)
+        P_Down = button(6)
+        P_Close = button(7)
+        P_List = Skip = button(8)
+        P_Mode = button(9)
+        P_Blocking = button(16)
+        P_Auto = button(17)
+        P_Menu = button(90) & (isAllowed(User)==1)
+    }
+}
+## List Screen Buttons
+elseif(Screen == 1 & !Skip){
+    if(changed(Use) & Use){
+        if(button(2)){Menu = !Menu}
+        elseif(button(11)){
+            Column3 = !Column3
+            renderColumn3()
+        }
+        Screen = !button(3) #Back
+        if(Cursor:y() > 96){ #In grid zone
+            gridButton()
+        }
+    }
+}
+elseif(Skip & !Use){
+    Skip = 0
+}
+
+
+
+##########################################################################  END  #####################################################################
+
+
+if(last()){
+    local FinalTable = table()
+    FinalTable["M",number]          = M
+    FinalTable["Mode",number]       = Mode
+    FinalTable["Blocking",number]   = Blocking
+    FinalTable["Auto",number]       = Auto
+    FinalTable["Prev",string]       = PrevAddress
+    FinalTable["Init",number]       = Init
+    FinalTable["Dialling",number]   = Dialling
+    FinalTable["H",number]          = H
+    FinalTable["IDCs",table]        = IDCs
+    FinalTable["Iris",number]       = Iris
+    FinalTable["Screen",number]     = Screen
+    FinalTable["Defcon",number]     = Defcon
+    FinalTable["Addresses",table]   =Addresses
+    FinalTable["Public",number]     = Public
+    FinalTable["Warning",number]    = Warning
+    FinalTable["Local",number]      = Local
+    FinalTable["Glyphs",number]     = Glyphs
+    FinalTable["Timeout",number]    = Timeout
+    FinalTable["Table",table]       = Table
+    GTable["Table",table] = FinalTable
+}
+if(removing()){
+    Iris = 1
+}

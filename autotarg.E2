@@ -1,0 +1,61 @@
+@name generic
+@outputs Fire 
+@persist Turret:entity Hover_height Vec:vector Ang:angle On Player:entity 
+runOnTick(1)
+
+if(first()){
+    findByClass("gmod_wire_turret")
+    findSortByDistance(entity():pos())
+    Turret = find()
+}
+if(!Turret){
+    print("Please Spawn A Wire Turret First")
+}  
+        
+if(owner():lastSaid()=="/on") {On = 1}
+if(owner():lastSaid()=="/off") {On = 0}
+
+Vec = entity():pos() - Turret:pos() + vec(0,0,50)
+Turret:applyForce((Vec + $Vec*5)*Turret:mass()*5)
+
+rangerFilter(Turret)
+Ranger = rangerOffset(100000, Turret:pos(), Turret:forward())
+
+
+if(On==1){
+    
+    if(Ranger:entity()==Player){
+        Fire=1
+    }else{
+        Fire = 0
+}
+}else{
+    Fire = 0
+}
+P = Turret:elevation( Player:pos() + Player:boxCenter() )
+Y = Turret:bearing( Player:pos() + Player:boxCenter() )
+R = Turret:angles():roll()
+Ang = -ang(P,Y,R)/15
+
+Turret:applyAngForce((Ang + $Ang*5)*Turret:mass()*15)
+
+S = owner():lastSaid():explode(" ")
+
+if(S:string(1)=="/t"){
+    
+    TempPlayer = findPlayerByName(S:string(2))
+    if(TempPlayer:isPlayer()){
+        Player = TempPlayer
+        
+    }
+    
+}
+
+if ( first()) {
+    hint("Commands Are:",45)
+hint("/t [NAME OF TARGET HERE]",45)
+  hint("/on [TURN TURRET ON]",45)  
+hint("/off [TURNS TURRET OFF]",45)
+hint("By ©",45) #i not see author
+hint("DO NOT REUPLOAD",45)
+    }

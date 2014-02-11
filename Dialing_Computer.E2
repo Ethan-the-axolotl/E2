@@ -1,0 +1,281 @@
+@name Dialing Computer
+@inputs IrisFeedback Keyboard InUse Code Active Open Inbound Chevron ConsoleS:wirelink AlarmOffButton RecievedCode RecievedCodeDEC:string ResetButton Autopilot
+@outputs Address DialMode Kick Close Iris SndChv1 SndChv2 SndChv3 SndChv4 SndChv5 SndChv6 SndChv7_L SndChv7_F SndIncoming SndIncomingWalter SndOutbound SndIris SndGDO
+@persist ES AlarmToggle1 AlarmToggle2 End Key InUse Kick GateChange Gatesum Ap1 Ap
+@trigger
+# 
+# INSTRUCTIONS FOR USE:
+# 
+# ALL Wire Buttons used MUST BE Non-Toggle.
+# 
+# Wire the following:
+# (SELF):IrisFeedback		TO (Iris Computer):Iris Status
+# (SELF):Keyboard			TO (Wire Keyboard):Memory
+# (SELF):InUse				TO (Wire Keyboard):In Use
+# (SELF):Code				TO (Iris Computer):Code Status
+# (SELF):Active				TO (Stargate):Active
+# (SELF):Open				TO (Stargate):Open
+# (SELF):Inbound			TO (Stargate):Inbound
+# (SELF):Chevron			TO (Stargate):Chevron
+# (SELF):ConsoleS			TO (Console Screen):Wirelink
+# (SELF):AlarmOffButton		TO (Button):Out
+# (SELF):RecievedCode		TO (Iris Computer):Recieved Code
+# (SELF):RecievedCodeDEC	TO (Iris Computer):Code Description
+# (SELF):ResetButton		TO (Button):Out
+# (Console Screen):Wirelink	TO (Button):Out "Same AS the one above"
+# (SELF):Autopilot			TO (Button):Out
+# (Stargate):Dial Address	TO (SELF):Address
+# (Stargate):Dial Mode		TO (SELF):DialMode
+# (Stargate):Close			TO (SELF):Close
+# 
+# Wire ALL Snd* Outputs to ALL THREE E2 Chips named "sounds_*_for_dial_computer"
+# 
+# Legend.
+# (???):XXX = Wire Input / Output Value on another Entity
+# (SELF):XXX = Wire Input / Output Value on E2 chip
+# 
+# Keys used: ENTER is DIAL STARGATE, DOWN ARROW is SHUTDOWN STARGATE and CTRL is IRIS OPEN/CLOSE
+# Reset Button Resets the the code in the E2 Chip and refreshes the Console Screen.
+# Autopilot button toggles Manual Iris Mode. Manual Iris Mode is identified on the Console screen and makes the Iris Computer wait for User Confirmation.
+# Alarm Off Button Toggles On/Off the Alarm on a on time only Activation. Resets on gate shutdown.
+#
+###########################################
+###### Reset Function for Computer ########
+if (ResetButton){reset()}
+###########################################
+###### Toggles the Alarm Button Func ######
+if (AlarmOffButton){AlarmToggle2=1}
+if(AlarmToggle2==1&AlarmOffButton==0){AlarmToggle1=!AlarmToggle1,AlarmToggle2=0}
+if(AlarmToggle1==1){ConsoleS:writeString("No Alarm",22,10,900)}
+else{ConsoleS:writeString("        ",22,10,999)}
+
+###########################################
+####### Toggles the Autopilot Func ########
+if (Autopilot){Ap1=1}
+if(Ap1==1&Autopilot==0){Ap=!Ap,Ap1=0}
+if(Ap==1){ConsoleS:writeString("MANUAL",12,0,900)}
+else{ConsoleS:writeString("      ",12,0,999)}
+
+###########################################
+############ Misc Functions ###############
+
+Key=Keyboard
+Dialmode = 1
+if (Key == 13){End = 1}  # ENTER Key will kick player out of keyboard and will engage the gate.
+if (Key >47 & Key <58|Key>96& Key<123|Key==13){Address = Key} # Prevents SHIFT Key commands sending to gate
+if (Key == 18){Close = 1,End = 1}
+if (Active==0){ConsoleS:writeString("   IDLE   ",10,10,999,0,1),ConsoleS:writeString("            ",9,2,999),ConsoleS:writeString("                 ",7,3,999),AlarmToggle2=0,AlarmToggle1=0}
+if(RecievedCodeDEC == ""){if(RecievedCode<9999999999) {RecievedCodeDEC=RecievedCode:toString()}}
+    else{RecievedCodeDEC}
+
+###########################################
+###### Determines if the Gate Closes ######
+
+if(Open==1){Gatesum=Active+Open}
+if(Open==0&Gatesum>0){GateChange=1}
+
+######################################
+#### Kicks player out of keyboard ####
+
+if (End == 1){if (Key == 0){Kick = 1}}
+if (InUse == 0){Kick = 0,Key=0,End=0,Close=0}
+
+######################################
+##### Iris Command ###################
+interval(100)
+
+if (Key == 158){Iris =!Iris,End = 1}
+    if(Inbound ==1 & Code == 0 & IrisFeedback==0 & Chevron>3&Chevron<7 & GateChange==0 & Ap == 0){Iris=!Iris} #Closes the Iris on in inbound wormhole at Chevron 2
+        elseif(Inbound ==1 & Code == 0 & Chevron>3&Chevron<7 & GateChange==0){
+            ConsoleS:writeString("UNAUTHORISED",9,2,999),
+            ConsoleS:writeString("INBOUND TRAVELLER",7,3,999),
+            ConsoleS:writeString(" INCOMING ",10,10,999,0,1)}
+        elseif (Code == 1 & IrisFeedback==1 & GateChange==0&Inbound==1 & Ap == 0) {Iris =!Iris}
+                elseif(Code==1&Inbound==1){
+                    ConsoleS:writeString(" AUTHORISED ",9,2,999),
+                    ConsoleS:writeString("INBOUND TRAVELLER",7,3,999),
+                    ConsoleS:writeString(" INCOMING ",10,10,999,0,1)}
+                elseif(Active==1&Code==0&Inbound==1){
+                    ConsoleS:writeString(" INCOMING ",10,10,999,0,1),
+                    ConsoleS:writeString("                       ",2,16,999),
+                    ConsoleS:writeString("                      ",3,17,999),
+                    ConsoleS:writeString("                      ",3,15,999),
+                    SndChv7_F=0}
+    if(Active==0&IrisFeedback==0&Gatesum>=0){GateChange=0,Gatesum=0}
+    if(Active == 0&IrisFeedback==1&Gatesum>0 & Ap == 0){Iris =!Iris,GateChange=0,Gatesum=0}
+    if(Active==0&IrisFeedback==0){
+ConsoleS:writeString("   IDLE   ",10,10,999,0,1),
+ConsoleS:writeString("            ",9,2,999),
+ConsoleS:writeString("                 ",7,3,999)}
+
+				
+######################################
+############ Iris Display ############
+if(IrisFeedback>=0){
+if(IrisFeedback==1){ConsoleS:writeString("CLOSED",23,14,999,420)}
+    else{ConsoleS:writeString(" OPEN ",23,14,999,420)}
+    ConsoleS:writeString("  IRIS  ",22,12,999,420)
+    ConsoleS:writeString(" STATUS ",22,13,999,420)
+    ConsoleS:writeString("[",22,14,999,420)
+ConsoleS:writeString("]",29,14,999,420)}
+else{ConsoleS:writeString("        ",22,14,999)
+    ConsoleS:writeString("        ",22,12,999)
+    ConsoleS:writeString("        ",22,13,999)
+}
+######################################
+###### Text Screen Output ############
+ConsoleS:writeString("STARGATE",11,8,999)
+if(Active==1&Inbound==0&Chevron==0&IrisFeedback==0){
+ConsoleS:writeString("DIALING...",10,10,999,0,1),
+    ConsoleS:writeString("                       ",2,16,999),
+ ConsoleS:writeString("                      ",3,17,999),
+ ConsoleS:writeString("                      ",3,15,999)
+SndChv7_F=0
+}
+if(Active==1&Inbound==0&Chevron==0&IrisFeedback==1){
+ConsoleS:writeString("DIALING...",10,10,999,0,1),
+    ConsoleS:writeString("                       ",2,16,999),
+ ConsoleS:writeString("                      ",3,17,999),
+ ConsoleS:writeString("                      ",3,15,999)
+SndChv7_F=0
+}
+	elseif(Active==1&Inbound==0){ConsoleS:writeString("DIALING...",10,10,999,0,1)}
+if(Active==1&Inbound==0&Chevron==1){
+ConsoleS:writeString("CHEVRON 1 ENGAGED",3,15,999,117)}
+if(Active==1&Inbound==0&Chevron==2){
+	ConsoleS:writeString("CHEVRON 2 ENGAGED",3,15,999,117)}
+if(Active==1&Inbound==0&Chevron==3){
+ConsoleS:writeString("CHEVRON 3 ENGAGED",3,15,999,117)}
+if(Active==1&Inbound==0&Chevron==4){
+ConsoleS:writeString("CHEVRON 4 ENGAGED",3,15,999,117)}
+if(Active==1&Inbound==0&Chevron==5){
+ConsoleS:writeString("CHEVRON 5 ENGAGED",3,15,999,117)}
+if(Active==1&Inbound==0&Chevron==6){
+ConsoleS:writeString("CHEVRON 6 ENGAGED",3,15,999,117)}
+if(Active==1&Inbound==0&Chevron==7){
+ConsoleS:writeString("CHEVRON 7 LOCKED ",3,15,999,117)
+if(Open==1){
+ConsoleS:writeString("  ",5,1,111,190),
+ConsoleS:writeString("  ",25,1,111,190),
+ConsoleS:writeString("  ",5,4,111,190),
+ConsoleS:writeString("  ",25,4,111,190),
+ConsoleS:writeString("OUTGOING WORMHOLE",7,2,190),
+ConsoleS:writeString("   ESTABLISHED   ",7,3,190),
+ConsoleS:writeString(" OUTGOING ",10,10,999,0,1)
+}}
+		elseif(Inbound ==1 & Code == 0){
+ConsoleS:writeString("  ",5,1,111,900),
+ConsoleS:writeString("  ",25,1,111,900),
+ConsoleS:writeString("  ",5,4,111,900),
+ConsoleS:writeString("  ",25,4,111,900),
+ConsoleS:writeString("  UNAUTHORISED   ",7,2,900),
+ConsoleS:writeString("INBOUND TRAVELLER",7,3,900)
+}
+			elseif(Inbound ==1 & Code == 1){
+ConsoleS:writeString("  ",5,1,111,190),
+ConsoleS:writeString("  ",25,1,111,190),
+ConsoleS:writeString("  ",5,4,111,190),
+ConsoleS:writeString("  ",25,4,111,190),
+ConsoleS:writeString("   AUTHORISED    ",7,2,190),
+ConsoleS:writeString("INBOUND TRAVELLER",7,3,190)
+}
+				elseif(Inbound ==1 & Code == 2){
+ConsoleS:writeString("  ",5,1,111,550),
+ConsoleS:writeString("  ",25,1,111,550),
+ConsoleS:writeString("  ",5,4,111,550),
+ConsoleS:writeString("  ",25,4,111,550),
+ConsoleS:writeString("UNAUTHORISED IDC ",7,2,550),
+ConsoleS:writeString("INBOUND TRAVELLER",7,3,550),
+ConsoleS:writeString(RecievedCodeDEC,7,5,550)}
+				else{
+ConsoleS:writeString("  ",5,1,900),
+ConsoleS:writeString("  ",25,1,900),
+ConsoleS:writeString("  ",5,4,900),
+ConsoleS:writeString("  ",25,4,900),
+ConsoleS:writeString("                 ",7,2,999),
+ConsoleS:writeString("                 ",7,3,999),
+ConsoleS:writeString("                ",7,5,550)}
+if(Chevron==-7){ES=1,
+ConsoleS:writeString("ERROR# Please check the",2,16,900,0,1),
+ConsoleS:writeString("address and try again",3,17,900,0,1),
+ConsoleS:writeString("CHEVRON 7 FAILED ",3,15,911)}
+if (ES==0&Active==0){
+ConsoleS:writeString("                       ",2,16,999),
+ ConsoleS:writeString("                      ",3,17,999),
+ ConsoleS:writeString("                      ",3,15,999)}
+
+###########################################
+############# Sound Player ################
+###########################################
+
+#### Closing Iris ###############
+if(Inbound ==1 & Code == 0 & Chevron>2&Chevron<7) {SndIris=1}
+else {SndIris=0}
+#################################
+
+#### Recieving GDO ##############
+if (Code == 1) {SndGDO=1}
+else {SndGDO=0}
+#################################
+
+#### Incoming Wormhole ##########
+if (Active == 1 & Inbound == 1 & AlarmToggle1 ==0) {
+    SndIncoming=1
+    }
+else{SndIncoming=0}
+if (Active == 1 & Inbound == 1) {SndIncomingWalter=1}
+else{SndIncomingWalter=0}
+
+#################################
+
+#### Outbound Wormhole ##########
+if (Active == 1 & Inbound == 0& AlarmToggle1 ==0) {SndOutbound=1}
+else {SndOutbound=0}
+#################################
+#### Chevron 1 Encoded ##########
+if (Chevron == 1 & Inbound == 0) {SndChv1=1}
+else {SndChv1=0}
+#################################
+
+#### Chevron 2 Encoded ##########
+if (Chevron == 2 & Inbound == 0) {SndChv2=1}
+else {SndChv2=0}
+#################################
+
+#### Chevron 3 Encoded ##########
+if (Chevron == 3 & Inbound == 0) {SndChv3=1}
+else {SndChv3=0}
+#################################
+
+#### Chevron 4 Encoded ##########
+if (Chevron == 4 & Inbound == 0) {SndChv4=1}
+else {SndChv4=0}
+#################################
+
+#### Chevron 5 Encoded ##########
+if (Chevron == 5 & Inbound == 0) {SndChv5=1}
+else {SndChv5=0}
+#################################
+
+#### Chevron 6 Encoded ##########
+if (Chevron == 6 & Inbound == 0) {SndChv6=1}
+else {SndChv6=0}
+#################################
+
+#### Chevron 7 Locked $##########
+if (Chevron == 7 & Inbound == 0) {SndChv7_L=1}
+else {SndChv7_L=0}
+#################################
+
+#### Chevron 7 Failed ##########
+if (ES==1 & Inbound == 0) {SndChv7_F=1
+    timer("C7F",5500)
+    if (clk("C7F")){
+    SndChv7_F=0
+    ES=0
+    ConsoleS:writeString("                       ",2,16,999),
+ ConsoleS:writeString("                      ",3,17,999),
+ ConsoleS:writeString("                      ",3,15,999),
+stoptimer("C7F")}}
+else {SndChv7_F=0}
+#################################

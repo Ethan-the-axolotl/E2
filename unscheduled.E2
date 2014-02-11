@@ -1,0 +1,8 @@
+@name Walter Sounds 2 for Dial Computer
+@inputs SndIncomingWalter
+@outputs 
+@persist E:entity 
+E=entity()
+
+#### Incoming Wormhole ##########
+if(SndIncomingWalter){E:soundPlay(1,20,"stargate/walter/unscheduled_offworld_activation.mp3")}

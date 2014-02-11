@@ -1,0 +1,35 @@
+@name Walter Sounds for Dial Computer
+@inputs SndChv1 SndChv2 SndChv3 SndChv4 SndChv5 SndChv6 SndChv7_L SndChv7_F SndIris SndGDO
+@outputs 
+@persist E:entity 
+E=entity()
+
+##### Closing the Iris ##########
+if(SndIris){E:soundPlay(1,20,"closing_iris.mp3")}
+
+##### Authorised Traveler #######
+if(SndGDO){E:soundPlay(1,20,"authorised_traveller.mp3")}
+
+#### Chevron 1 Encoded ##########
+if (SndChv1) {E:soundPlay(1,20,"stargate/walter/c1.mp3")}
+
+#### Chevron 2 Encoded ##########
+if (SndChv2) {E:soundPlay(1,20,"stargate/walter/c2.mp3")}
+
+#### Chevron 3 Encoded ##########
+if (SndChv3) {E:soundPlay(1,20,"stargate/walter/c3.mp3")}
+
+#### Chevron 4 Encoded ##########
+if (SndChv4) {E:soundPlay(1,20,"stargate/walter/c4.mp3")}
+
+#### Chevron 5 Encoded ##########
+if (SndChv5) {E:soundPlay(1,20,"stargate/walter/c5.mp3")}
+
+#### Chevron 6 Encoded ##########
+if (SndChv6) {E:soundPlay(1,20,"stargate/walter/c6.mp3")}
+
+#### Chevron 7 Locked $##########
+if (SndChv7_L) {E:soundPlay(1,20,"stargate/walter/c7_locked.mp3")}
+
+#### Chevron 7 Failed ##########
+if (SndChv7_F) {E:soundPlay(1,20,"stargate/walter/c7_failed.mp3")}

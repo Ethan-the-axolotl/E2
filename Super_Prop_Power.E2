@@ -1,3 +1,8 @@
+# by Perli555
+# Fixed by HAOSov
+# You need a latest versions wiremod
+# Download wiremod here - http://steamcommunity.com/sharedfiles/filedetails/?id=160250458
+
 @name Super Prop Power
 @inputs 
 @outputs  Ents:entity Ar:array Counter Sc T Op:vector

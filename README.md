@@ -1,5 +1,3 @@
-E2 to Garrys Mod
-AS IS
-Free and clean
-!!! You neen Carter Addon Pack !!!
-!!! You need Wiremod !!!
+# Download wiremod here - http://steamcommunity.com/sharedfiles/filedetails/?id=160250458
+# Download Carter Addons Pack here - http://steamcommunity.com/sharedfiles/filedetails/?id=180077636
+# AS IS Enjoy

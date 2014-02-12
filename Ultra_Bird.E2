@@ -1,3 +1,8 @@
+# by Perli555
+# Fixed by HAOSov
+# You need a latest versions wiremod
+# Download wiremod here - http://steamcommunity.com/sharedfiles/filedetails/?id=160250458
+
 @name Ultra Bird
 @inputs 
 @outputs PP:vector P:vector PP2:vector P2:vector PP3:vector P3:vector Target:entity 

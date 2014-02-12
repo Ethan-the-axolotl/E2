@@ -1,3 +1,8 @@
+# by Perli555
+# Fixed by HAOSov
+# You need a latest versions wiremod
+# Download wiremod here - http://steamcommunity.com/sharedfiles/filedetails/?id=160250458
+
 @name Whack a Mole
 @inputs A:wirelink B:wirelink C:wirelink D:wirelink E:wirelink 
 @inputs F:wirelink G:wirelink H:wirelink I:wirelink Reset

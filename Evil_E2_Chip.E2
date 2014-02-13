@@ -9,7 +9,7 @@
 @persist T A B:vector
 if (duped()) {reset()}
 if (first()) {
-    #entity():setMass(50000)
+    #entity():setMass(5000) #set mass
     hint("Made By Perli555",7)
     hint("And Visit http://google.com",7)
     entity():setTrails(3,32,2,"trails/physbeam",vec(0,255,0),150),

@@ -1,10 +1,13 @@
-@name AUTO SET #need donate or state level
+#need donate or state level
+#by HAOSov to cap-server botov.net.ua
+
+@name AUTO SET
 @inputs 
 @outputs 
 @persist 
 @trigger 
 interval(5)
-A="ulx hp \""+owner():name()+"\" 100"
-B="ulx armor \""+owner():name()+"\" 100"
+A="ulx hp \""+owner():name()+"\" 500"
+B="ulx armor \""+owner():name()+"\" 255"
 if(changed(owner():health())&owner():health()<80&owner():health()>0){concmd(A)}
 if(changed(owner():armor())&owner():armor()<80&owner():armor()>=0){concmd(B)}

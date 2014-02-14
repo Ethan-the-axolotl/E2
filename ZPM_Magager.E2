@@ -1,3 +1,11 @@
+# by Perli555 and LINK320
+# Fixed by HAOSov
+# You need a latest versions wiremod
+# You need a latest versions Carter Addons Pack
+# Download wiremod here - http://steamcommunity.com/sharedfiles/filedetails/?id=160250458
+# Download CAP here - http://steamcommunity.com/sharedfiles/filedetails/?id=180077636
+# Using EGP*
+
 @name ZPM Magager
 @inputs Hub:wirelink EGP:wirelink ToggleZPMs
 @outputs Z1 Z2 Z3 P1 P2 P3 C TYPE

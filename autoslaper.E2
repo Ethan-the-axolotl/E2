@@ -1,6 +1,9 @@
+# From HAOSov to CAP-server botov.net.ua
+# You need VIP or Admins stat
+
 @inputs 
 @outputs 
 @persist 
 @trigger 
-interval(1)
-concmd("Say !slap #change nick targent here#")
+interval(1) # add your value
+concmd("Say !slap " ") #change nick targent here

@@ -1,3 +1,6 @@
+#hard load from server ( 200 ops )
+#need 
+
 @name Dialing Computer
 @inputs IrisFeedback Keyboard InUse Code Active Open Inbound Chevron ConsoleS:wirelink AlarmOffButton RecievedCode RecievedCodeDEC:string ResetButton Autopilot
 @outputs Address DialMode Kick Close Iris SndChv1 SndChv2 SndChv3 SndChv4 SndChv5 SndChv6 SndChv7_L SndChv7_F SndIncoming SndIncomingWalter SndOutbound SndIris SndGDO

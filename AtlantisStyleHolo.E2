@@ -1,0 +1,59 @@
+@name Atlantis Style Holo
+@persist Vec:vector 
+
+interval(1000)
+
+Vec = entity():pos()
+
+Radius = findInSphere(Vec,140)
+
+holoCreate(10,entity():pos()+vec(150,0,0),vec(1,1,1))
+holoAng(10,ang(0,0,entity():angles():roll()))
+holoParent(10,entity())
+holoModel(10,"models/hunter/blocks/cube025x05x025.mdl")
+
+holoCreate(11,entity():pos()+vec(0,150,0),vec(1,1,1))
+holoAng(11,ang(0,90,entity():angles():roll()))
+holoParent(11,entity())
+holoModel(11,"models/hunter/blocks/cube025x05x025.mdl")
+
+holoCreate(12,entity():pos()+vec(0,-150,0),vec(1,1,1))
+holoAng(12,ang(0,90,entity():angles():roll()))
+holoParent(12,entity())
+holoModel(12,"models/hunter/blocks/cube025x05x025.mdl")
+
+holoCreate(13,entity():pos()+vec(-150,0,0),vec(1,1,1))
+holoAng(13,ang(0,0,entity():angles():roll()))
+holoParent(13,entity())
+holoModel(13,"models/hunter/blocks/cube025x05x025.mdl")
+
+if (Radius) {
+    lightCreate(1,entity():pos(),vec(63.75,127.5,255))
+    lightParent(1,entity())
+    lightToggle(1,1)
+    
+    findByClass("player")
+    findIncludeClass("player")
+    holoCreate(1,entity():pos()+vec(0,0,20),vec(1,1,1))
+    holoParent(1,entity())
+    holoModel(1,"models/gman.mdl")
+    holoAnim(1,15)
+
+    holoCreate(2,entity():pos()+vec(0,0,0),vec(1,1,1))
+    holoParent(2,entity())
+    holoModel(2,"sphere")
+    holoColor(2,vec(0,127.5,0))
+    
+    holoCreate(3,entity():pos()+vec(0,0,10),vec(10,10,15))
+    holoAng(3,ang(180,0,entity():angles():roll()))
+    holoParent(3,entity())
+    holoModel(3,"cone")
+    holoMaterial(3,"cmats/genfield")
+    holoColor(3,vec(255,255,255),10)
+    
+} else {
+    holoDelete(1)
+    holoDelete(3)
+    holoColor(2,vec(127.5,0,0))
+    lightToggle(1,0)
+}

@@ -1,0 +1,85 @@
+@name Radar
+@inputs EGP:wirelink
+@persist Plys:array Color:vector
+interval(1)
+ 
+Plys=players()
+O=owner()
+if(first()|duped()|changed(EGP)|changed(Plys:count())){
+    EGP:egpClear()
+    EGP:egpWedge(1,vec2(180,180),vec2(150,150))
+    EGP:egpColor(1,vec(40,60,100))
+    EGP:egpAlpha(1,75)
+    EGP:egpSize(1,90)
+    EGP:egpAngle(1,45)
+    EGP:egpWedgeOutline(2,vec2(180,180),vec2(150,150))
+    EGP:egpColor(2,vec(40,100,100))
+    EGP:egpAlpha(2,75)
+    EGP:egpSize(2,90)
+    EGP:egpAngle(2,45)
+    EGP:egpCircleOutline(3,vec2(180,180),vec2(150,150))
+    EGP:egpColor(3,vec(40,100,100))
+    EGP:egpAlpha(3,75)
+    EGP:egpSize(3,3)
+    EGP:egpWedge(4,vec2(180,180),vec2(150,150))
+    EGP:egpColor(4,vec(40,100,200))
+    EGP:egpAlpha(4,75)
+    EGP:egpSize(4,270)
+    EGP:egpAngle(4,135)
+    EGP:egpTriangle(5,vec2(180,173),vec2(175,183),vec2(185,183))
+    EGP:egpColor(5,vec(255,255,0))
+    EGP:egpAlpha(5,200)
+    EGP:egpCircleOutline(6,vec2(180,180),vec2(100,100))
+    EGP:egpColor(6,vec(40,100,100))
+    EGP:egpAlpha(6,200)
+    EGP:egpCircleOutline(7,vec2(180,180),vec2(50,50))
+    EGP:egpColor(7,vec(40,100,100))
+    EGP:egpAlpha(7,200)
+ 
+ 
+}
+ 
+for(I=1,Plys:count()){
+    Ply=Plys[I,entity]
+    Dis=Ply:pos():distance(O:pos())
+    if(Dis>2000||Ply==O){EGP:egpRemove(8+I),continue}
+    Dif=Ply:pos()-O:pos()
+    W=toRad(toDeg(atan(Dif:x(),Dif:y()))-toDeg(atan(O:eye():x(),O:eye():y())))
+    Org=sqrt(Dif:x()^2+Dif:y()^2)
+    X=sin(W)*Org
+    Y=-cos(W)*Org
+ 
+if(Ply:isSteamFriend(O) == 0 & Ply:isAdmin() == 0 & Ply:isSuperAdmin() == 0)
+    {
+    Color=vec(255,0,0)
+    EGP:egpBox(8+I,vec2(180+X/2000*150,180+Y/2000*150),vec2(8,8))
+    }
+       
+elseif(Ply:isSteamFriend(O) == 1)
+    {
+    Color=vec(255,255,0)    
+    EGP:egpCircle(8+I,vec2(180+X/2000*150,180+Y/2000*150),vec2(5,5))
+    }
+elseif(Ply:isAdmin() == 1 | Ply:isSuperAdmin() == 1)
+    {
+    Color=vec(255,160,0)    
+    EGP:egpBox(8+I,vec2(180+X/2000*150,180+Y/2000*150),vec2(8,8))
+    }
+    elseif(Ply:isSteamFriend(O) == 1 & (Ply:isAdmin() == 1 | Ply:isSuperAdmin() == 1))
+    {
+    Color=vec(255,127.5,0)    
+    EGP:egpCircle(8+I,vec2(180+X/2000*150,180+Y/2000*150),vec2(5,5))
+    }
+   
+   
+    EGP:egpAngle(8+I,45)
+    EGP:egpColor(8+I,Color)
+    EGP:egpAlpha(8+I,200)
+ 
+    }
+   
+if(first() | duped())
+{
+EGP:egpHudToggle()
+reset()
+}

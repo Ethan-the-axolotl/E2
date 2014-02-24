@@ -1,5 +1,5 @@
 @name Atlantis Style Holo
-@persist Vec:vector 
+@persist Vec:vector Player:entity
 
 interval(1000)
 
@@ -7,25 +7,27 @@ Vec = entity():pos()
 
 Radius = findInSphere(Vec,140)
 
-holoCreate(10,entity():pos()+vec(150,0,0),vec(1,1,1))
-holoAng(10,ang(0,0,entity():angles():roll()))
-holoParent(10,entity())
-holoModel(10,"models/hunter/blocks/cube025x05x025.mdl")
+if(first()) {
+    holoCreate(10,entity():pos()+vec(150,0,0),vec(1,1,1))
+    holoAng(10,ang(0,180,entity():angles():roll()))
+    holoParent(10,entity())
+    holoModel(10,"models/hunter/blocks/cube025x05x025.mdl")
 
-holoCreate(11,entity():pos()+vec(0,150,0),vec(1,1,1))
-holoAng(11,ang(0,90,entity():angles():roll()))
-holoParent(11,entity())
-holoModel(11,"models/hunter/blocks/cube025x05x025.mdl")
+    holoCreate(11,entity():pos()+vec(0,150,0),vec(1,1,1))
+    holoAng(11,ang(0,-90,entity():angles():roll()))
+    holoParent(11,entity())
+    holoModel(11,"models/hunter/blocks/cube025x05x025.mdl")
 
-holoCreate(12,entity():pos()+vec(0,-150,0),vec(1,1,1))
-holoAng(12,ang(0,90,entity():angles():roll()))
-holoParent(12,entity())
-holoModel(12,"models/hunter/blocks/cube025x05x025.mdl")
+    holoCreate(12,entity():pos()+vec(0,-150,0),vec(1,1,1))
+    holoAng(12,ang(0,90,entity():angles():roll()))
+    holoParent(12,entity())
+    holoModel(12,"models/hunter/blocks/cube025x05x025.mdl")
 
-holoCreate(13,entity():pos()+vec(-150,0,0),vec(1,1,1))
-holoAng(13,ang(0,0,entity():angles():roll()))
-holoParent(13,entity())
-holoModel(13,"models/hunter/blocks/cube025x05x025.mdl")
+    holoCreate(13,entity():pos()+vec(-150,0,0),vec(1,1,1))
+    holoAng(13,ang(0,0,entity():angles():roll()))
+    holoParent(13,entity())
+    holoModel(13,"models/hunter/blocks/cube025x05x025.mdl")
+}
 
 if (Radius) {
     lightCreate(1,entity():pos(),vec(63.75,127.5,255))
@@ -34,10 +36,17 @@ if (Radius) {
     
     findByClass("player")
     findIncludeClass("player")
+    
+    Vec = entity():pos()
+    Player = findClosest(Vec)
+    Model = Player:model()
+    Model = Model:replace("/player","")
+    
     holoCreate(1,entity():pos()+vec(0,0,20),vec(1,1,1))
+    holoAng(1,ang(0,-90,entity():angles():roll()))
     holoParent(1,entity())
-    holoModel(1,"models/gman.mdl")
-    holoAnim(1,15)
+    holoModel(1,Model)
+    holoAnim(1,5,0)
 
     holoCreate(2,entity():pos()+vec(0,0,0),vec(1,1,1))
     holoParent(2,entity())

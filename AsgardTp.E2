@@ -1,4 +1,3 @@
-              
                                                 ###############
                                                 ####the9mm#####
                                                 ###############
@@ -11,7 +10,9 @@ interval(200)
 runOnChat(1)
 Block=1
 
-
+function entity getGate(N){
+    findByClass("stargate_*")
+return findResult(N)}
 if (first() | duped()) {Owner = owner()
     hint("Type /help to see how use this awesome teleporter", 7)
 }
@@ -21,15 +22,15 @@ if (first() | duped()) {Owner = owner()
 if (Explode[1,string]=="/wall")
             {hideChat(1)
                 Teleport_everything=0
-             Origin=Owner:pos()
-            if (Explode[2,string]=="forward")            
-                {Dest=Owner:aimPos() + vec(100,0,0)}
-          elseif (Explode[2,string]=="back")
-               {Dest=Owner:pos() + vec(-100,0,0)}
-           elseif (Explode[2,string]=="right")
-                {Dest=Owner:pos() + vec(0,100,0)}
-            elseif (Explode[2,string]=="left")
-                {Dest=Owner:pos() + vec(0,-100,0)}
+             Origin=Owner:pos()          
+             Dest=owner():toWorld(vec(90, 0, 0))
+timer("Send",50)}
+
+if (Explode[1,string]=="/unstuck")
+            {hideChat(1)
+                Teleport_everything=0
+             Origin=Owner:pos()          
+             Dest=owner():toWorld(vec(-90, 0, 0))
 timer("Send",50)}
 
 elseif (Explode[1,string]=="/goto")
@@ -95,8 +96,10 @@ elseif (Explode[1,string]=="/help")
             {hideChat(1)
     print("/goto 'playername' to go to selected player ") 
     print("/get 'playername' to get selected player to you ")
-    print("/wall 'direction' to go trough wall by selected direction ")
+    print("/wall to pass trough wall")
+    print("/unstuck get out from wall you stuck")
     print("/base to return to this e2 ")
+    print("/gate 'number' to teleport to stargate")
     print("/send 'playername' to send selected player anythign on your aim ")
     print("/ptp 'playername1' 'playername2' to teleport first player to second ")
     print("/aim to teleport on your aim position ")
@@ -116,7 +119,16 @@ timer("Send",50)}
 else {Send=0
 hint("No such players here!",5)
 soundPlay(1,1,"buttons/button10.wav")
-}}} 
+}}
+
+elseif (Explode[1,string]=="/gate")
+            {hideChat(1)
+                Arg1=Explode[2,string]
+                Teleport_everything=0
+                Origin=Owner:pos()
+                Dest=getGate(Arg1:toNumber()):toWorld(vec(100,0,0))
+                timer("Send",50)}
+} 
 
 
 
@@ -124,5 +136,5 @@ if (clk("Send")) {Send = 1} else {Send = 0}
 Asgard["Origin",vector]=Origin
 Asgard["Dest",vector]=Dest
 Asgard["Send",number]=Send
-Asgard["Teleport Everything",number]=Teleport_everything=
+Asgard["Teleport Everything",number]=Teleport_everything
 Asgard["Disable Use",number]=Block

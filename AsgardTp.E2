@@ -1,0 +1,128 @@
+              
+                                                ###############
+                                                ####the9mm#####
+                                                ###############
+@name AsgardTp
+@inputs Asgard:wirelink
+@persist [Owner Target Target2]:entity [Name Name2]:string [Origin Dest]:vector Send Teleport_everything Block
+@model models/iziraider/artifacts/asgard_stone.mdl
+
+interval(200)
+runOnChat(1)
+Block=1
+
+
+if (first() | duped()) {Owner = owner()
+    hint("Type /help to see how use this awesome teleporter", 7)
+}
+    
+    if (chatClk(Owner))
+    {Explode = Owner:lastSaid():explode(" ")
+if (Explode[1,string]=="/wall")
+            {hideChat(1)
+                Teleport_everything=0
+             Origin=Owner:pos()
+            if (Explode[2,string]=="forward")            
+                {Dest=Owner:aimPos() + vec(100,0,0)}
+          elseif (Explode[2,string]=="back")
+               {Dest=Owner:pos() + vec(-100,0,0)}
+           elseif (Explode[2,string]=="right")
+                {Dest=Owner:pos() + vec(0,100,0)}
+            elseif (Explode[2,string]=="left")
+                {Dest=Owner:pos() + vec(0,-100,0)}
+timer("Send",50)}
+
+elseif (Explode[1,string]=="/goto")
+            {hideChat(1)
+                Teleport_everything=0
+                Origin=Owner:pos()
+                Name=(Explode[2,string])
+                Target=findPlayerByName(Name)
+            if (Target:isPlayer()==1)
+                {Dest=Target:pos() + vec(50,50,0)
+timer("Send",50)}
+        else {Send=0
+            hint("No such players here!",5)
+            soundPlay(1,1,"buttons/button10.wav")}}
+            
+elseif (Explode[1,string]=="/get")
+            {hideChat(1)
+                Teleport_everything=0
+                Name=(Explode[2,string])
+                Target=findPlayerByName(Name)
+                      Origin=Target:pos()
+            if (Target:isPlayer()==1)
+                {if (Target!=Owner)
+                {Dest=Owner:pos() + vec(50,50,0)
+timer("Send",50)}
+else {Send=0
+hint("You can't send yourself to yourself!",5)
+soundPlay(1,1,"buttons/button10.wav")}}
+
+        else {Send=0
+            hint("No such players here!",5)
+            soundPlay(1,1,"buttons/button10.wav")
+}}
+
+elseif (Explode[1,string]=="/aim")
+            {hideChat(1)
+                Teleport_everything=0
+                Origin=Owner:pos()
+                Dest=Owner:aimPos()
+timer("Send",50)}
+
+elseif (Explode[1,string]=="/base")
+            {hideChat(1)
+                Teleport_everything=0
+                Origin=Owner:pos()
+                Dest=entity():pos()+vec(30,30,0)
+timer("Send",50)}
+
+elseif (Explode[1,string]=="/send")
+            {hideChat(1)
+                Teleport_everything=1
+                Origin=Owner:aimPos()
+                Name=(Explode[2,string])
+                Target=findPlayerByName(Name)
+            if (Target:isPlayer()==1)
+                {Dest=Target:pos() + vec(50,50,0)
+timer("Send",50)}
+        else {Send=0
+    hint("No such players here!",5)
+    soundPlay(1,1,"buttons/button10.wav")}}
+    
+elseif (Explode[1,string]=="/help")
+            {hideChat(1)
+    print("/goto 'playername' to go to selected player ") 
+    print("/get 'playername' to get selected player to you ")
+    print("/wall 'direction' to go trough wall by selected direction ")
+    print("/base to return to this e2 ")
+    print("/send 'playername' to send selected player anythign on your aim ")
+    print("/ptp 'playername1' 'playername2' to teleport first player to second ")
+    print("/aim to teleport on your aim position ")
+    print("/help to see this help again")}    
+    
+elseif (Explode[1,string]=="/ptp")
+            {hideChat(1)
+                Teleport_everything=0
+                Name=(Explode[2,string])
+                Name=(Explode[3,string])
+                Target=findPlayerByName(Name)
+                Target2=findPlayerByName(Name2)
+                Origin=Target:pos()
+                if (Target:isPlayer()==1 & Target2:isPlayer()==1 )
+                {Dest=Target2:pos() + vec(50,50,0)
+timer("Send",50)}
+else {Send=0
+hint("No such players here!",5)
+soundPlay(1,1,"buttons/button10.wav")
+}}} 
+
+
+
+if (clk("Send")) {Send = 1} else {Send = 0}
+Asgard["Origin",vector]=Origin
+Asgard["Dest",vector]=Dest
+Asgard["Send",number]=Send
+Asgard["Teleport Everything",number]=Teleport_everything=
+Asgard["Disable Use",number]=Block

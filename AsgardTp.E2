@@ -19,21 +19,21 @@ if (first() | duped()) {Owner = owner()
     
     if (chatClk(Owner))
     {Explode = Owner:lastSaid():explode(" ")
-if (Explode[1,string]=="/wall")
+if (Explode[1,string]=="!wall")
             {hideChat(1)
                 Teleport_everything=0
              Origin=Owner:pos()          
              Dest=owner():toWorld(vec(90, 0, 0))
 timer("Send",50)}
 
-if (Explode[1,string]=="/unstuck")
+if (Explode[1,string]=="!unstuck")
             {hideChat(1)
                 Teleport_everything=0
              Origin=Owner:pos()          
              Dest=owner():toWorld(vec(-90, 0, 0))
 timer("Send",50)}
 
-elseif (Explode[1,string]=="/goto")
+elseif (Explode[1,string]=="!tohim")
             {hideChat(1)
                 Teleport_everything=0
                 Origin=Owner:pos()
@@ -46,7 +46,7 @@ timer("Send",50)}
             hint("No such players here!",5)
             soundPlay(1,1,"buttons/button10.wav")}}
             
-elseif (Explode[1,string]=="/get")
+elseif (Explode[1,string]=="!tome")
             {hideChat(1)
                 Teleport_everything=0
                 Name=(Explode[2,string])
@@ -65,21 +65,21 @@ soundPlay(1,1,"buttons/button10.wav")}}
             soundPlay(1,1,"buttons/button10.wav")
 }}
 
-elseif (Explode[1,string]=="/aim")
+elseif (Explode[1,string]=="!aim")
             {hideChat(1)
                 Teleport_everything=0
                 Origin=Owner:pos()
                 Dest=Owner:aimPos()
 timer("Send",50)}
 
-elseif (Explode[1,string]=="/base")
+elseif (Explode[1,string]=="!base")
             {hideChat(1)
                 Teleport_everything=0
                 Origin=Owner:pos()
                 Dest=entity():pos()+vec(30,30,0)
 timer("Send",50)}
 
-elseif (Explode[1,string]=="/send")
+elseif (Explode[1,string]=="!send")
             {hideChat(1)
                 Teleport_everything=1
                 Origin=Owner:aimPos()
@@ -92,7 +92,7 @@ timer("Send",50)}
     hint("No such players here!",5)
     soundPlay(1,1,"buttons/button10.wav")}}
     
-elseif (Explode[1,string]=="/help")
+elseif (Explode[1,string]=="!help")
             {hideChat(1)
     print("/goto 'playername' to go to selected player ") 
     print("/get 'playername' to get selected player to you ")
@@ -105,7 +105,7 @@ elseif (Explode[1,string]=="/help")
     print("/aim to teleport on your aim position ")
     print("/help to see this help again")}    
     
-elseif (Explode[1,string]=="/ptp")
+elseif (Explode[1,string]=="!ptp")
             {hideChat(1)
                 Teleport_everything=0
                 Name=(Explode[2,string])
@@ -121,7 +121,7 @@ hint("No such players here!",5)
 soundPlay(1,1,"buttons/button10.wav")
 }}
 
-elseif (Explode[1,string]=="/gate")
+elseif (Explode[1,string]=="!gaten")
             {hideChat(1)
                 Arg1=Explode[2,string]
                 Teleport_everything=0

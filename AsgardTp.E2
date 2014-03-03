@@ -94,16 +94,17 @@ timer("Send",50)}
     
 elseif (Explode[1,string]=="!help")
             {hideChat(1)
-    print("/goto 'playername' to go to selected player ") 
-    print("/get 'playername' to get selected player to you ")
-    print("/wall to pass trough wall")
-    print("/unstuck get out from wall you stuck")
-    print("/base to return to this e2 ")
-    print("/gate 'number' to teleport to stargate")
-    print("/send 'playername' to send selected player anythign on your aim ")
-    print("/ptp 'playername1' 'playername2' to teleport first player to second ")
-    print("/aim to teleport on your aim position ")
-    print("/help to see this help again")}    
+    print("tohim 'playername' to go to selected player ") 
+    print("tome 'playername' to get selected player to you ")
+    print("wall to pass trough wall")
+    print("unstuck get out from wall you stuck")
+    print("base to return to this e2 ")
+    print("gaten 'number' to teleport to stargate")
+    print("send 'playername' to send selected player anythign on your aim ")
+    print("ptp 'playername1' 'playername2' to teleport first player to second ")
+    print("aim to teleport on your aim position ")
+    print("help to see this help again")   
+    print("use ! from chat")}
     
 elseif (Explode[1,string]=="!ptp")
             {hideChat(1)

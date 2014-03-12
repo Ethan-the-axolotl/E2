@@ -161,8 +161,18 @@ Rescue=Teleporter:forward()*60+Teleporter_Pos
             }
         }
 
-  
+if (chatClk(owner())){
+    LastSaid=owner():lastSaid():explode(" ")
+    Command = LastSaid[1,string]
+    Arg1 = LastSaid[2,string]
+    Arg2 = LastSaid[3,string]
+    if (Command[1] == "/"){
+        hideChat(1)
 
+elseif (Command=="!base"){
+        if (Arg1){
+            asgardTeleport(findPlayerByName(Arg1):pos(),entity():isWeldedTo():toWorld(vec(70,0,0)),0)
+        }
 
 if (Rescue_Button){Dest=Rescue,Origin=User}else{Dest=New}
 if (Mode==5 | Mode==6){Asgard_Transporter:setNumber("Teleport Everything",1)}else{Asgard_Transporter:setNumber("Teleport Everything",0)}

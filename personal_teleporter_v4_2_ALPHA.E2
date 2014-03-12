@@ -1,10 +1,12 @@
 #not tested not use this
+#fix1 12.03.2014
 
 ##########################################################
 ###########          Don't touch this           ##########
 ##########################################################
 
 @name Personal Teleporter_v4_2
+@outputs Origin:vector Dest:vector TeleportEverything Send
 @inputs Asgard_Transporter:wirelink Wired_Numpad:wirelink
 @persist Cloak Cloak_p:number Cloak_v:number Teleporter:entity Numpad:entity Dis Dis_u Mode Save_set Use
 @persist User:vector Eye:vector Target:vector New:vector Saved:vector Rescue:vector Dest:vector Origin:vector 
@@ -63,7 +65,8 @@ N5=Wired_Numpad["5",number],N6=Wired_Numpad["6",number],N7=Wired_Numpad["7",numb
 
 Use=owner():keyUse()
 
-interval(50)
+interval(250)
+runOnChat(1)
 
 User=owner():pos()
 Target=owner():aimPos()

@@ -1,5 +1,6 @@
 #not tested not use this
 #fix1 12.03.2014
+#fix2 18.03.2014
 
 ##########################################################
 ###########          Don't touch this           ##########
@@ -187,7 +188,7 @@ if (Mode_up & $Mode_up){Mode++},if (Mode==9){Mode=0}
 if (Mode_down & $Mode_down){Mode--},if (Mode==-1){Mode=8}
 if ($Mode & (($Mode_up & Mode_up)|($Mode_down & Mode_down)))
     {        
-        if (Mode==0){print(4,"Teleporter disabled")}
+        if (Mode==0){print(4,"Teleporter off")}
         if (Mode==1){print(4,"(Mode 1) To crosshair")}
         if (Mode==2){    if (Dis<=0){print(4,"(Mode 2) "+Dis+" "+UOL_array[UOL,string]+" ahead - OFFLINE!")}else {print(4,"(Mode 2) "+Dis+" "+UOL_array[UOL,string]+" ahead")}    }
         if (Mode==3){print(4,"(Mode 3) Behind walls")}

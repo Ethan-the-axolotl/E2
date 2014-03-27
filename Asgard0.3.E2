@@ -3,6 +3,7 @@
 @persist OriginName:entity DestName:entity Origin:vector Dest:vector X Y Z X2 Y2 Z2
 
 # Target Chooser
+interval(200)
 runOnTick(1)
 runOnChat(1)
 LS=owner():lastSaid():explode(" ")

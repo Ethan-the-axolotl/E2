@@ -1,0 +1,6 @@
+@name TP02
+@outputs Player:vector AimPos:vector
+interval(0.00000000000001)
+Gamer = owner()
+AimPos = Gamer:aimPos() + vec(0,0,30)
+Player = Gamer:pos()

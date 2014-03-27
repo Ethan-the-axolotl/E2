@@ -8,13 +8,14 @@
 
 interval(200)
 runOnChat(1)
+runOnTick(1)
 Block=1
 
 function entity getGate(N){
     findByClass("stargate_*")
 return findResult(N)}
 if (first() | duped()) {Owner = owner()
-    hint("Type /help to see how use this awesome teleporter", 7)
+    hint("Type !help to see how use this awesome teleporter", 7)
 }
     
     if (chatClk(Owner))

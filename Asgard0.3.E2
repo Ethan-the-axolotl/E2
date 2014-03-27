@@ -1,0 +1,21 @@
+@name Asgard
+@outputs Origin:vector Dest:vector NameOrigin:string NameDest:string
+@persist OriginName:entity DestName:entity Origin:vector Dest:vector X Y Z X2 Y2 Z2
+
+# Target Chooser
+runOnTick(1)
+runOnChat(1)
+LS=owner():lastSaid():explode(" ")
+if(chatClk(owner())&LS:string(1)=="!a"){ OriginName=findPlayerByName(LS:string(2))
+}
+if(OriginName:isPlayer()==1){X=OriginName:pos():x() Y=OriginName:pos():y() Z=OriginName:pos():z()
+}
+
+if(chatClk(owner())&LS:string(1)=="!b"){ DestName=findPlayerByName(LS:string(2))
+}
+if(DestName:isPlayer()==1){X2=DestName:pos():x() Y2=DestName:pos():y() Z2=DestName:pos():z()
+}
+
+# Target Locator
+Origin = vec(X,Y,Z)
+Dest = vec(X2,Y2,Z2)

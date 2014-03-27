@@ -4,6 +4,7 @@
 @persist Player:entity
 @trigger 
 runOnTick(1)
+runOnChat(1)
 
 
     
@@ -12,7 +13,7 @@ runOnTick(1)
 
 S=owner():lastSaid():explode(" ")
 
-if(S:string(1)=="/t") {
+if(S:string(1)=="!t") {
     
  TempPlayer = findPlayerByName(S:string(2))
  if(TempPlayer:isPlayer()){

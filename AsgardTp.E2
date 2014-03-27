@@ -72,6 +72,9 @@ elseif (Explode[1,string]=="!aim")
                 Origin=Owner:pos()
                 Dest=Owner:aimPos()
 timer("Send",50)}
+if(Attack==0&O:keyAttack1()&E&O:aimEntity()!=E){
+        {concmd("Say !aim")
+    }
 
 elseif (Explode[1,string]=="!base")
             {hideChat(1)

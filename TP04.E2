@@ -1,9 +1,10 @@
-@name 04
+@name TP04
 @inputs 
 @outputs Holo:vector AIM:vector POS:vector
 @persist Player:entity
 @trigger 
 runOnTick(1)
+runOnChat(1)
 
 if(first()){
     holoCreate(0)
@@ -11,7 +12,7 @@ if(first()){
 
 S=owner():lastSaid():explode(" ")
 
-if(S:string(1)=="/t") {
+if(S:string(1)=="!t") {
     
  TempPlayer = findPlayerByName(S:string(2))
  if(TempPlayer:isPlayer()){

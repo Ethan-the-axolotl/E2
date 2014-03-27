@@ -1,0 +1,131 @@
+@name Asgard Transporter
+@inputs
+@outputs [Origin Dest]:vector
+@outputs [Send Teleport_Everything]:normal
+
+if (first() | duped())
+{
+LocationsNumber = 0
+LocationsName = 0
+TeleportationArray = array()
+TeleportName = array()
+}
+
+interval(200)
+runOnChat(1)
+if (chatClk(owner())) 
+{
+Chat = owner():lastSaid():explode(" ")
+if (Chat:string(1) == "/saveloc") #If the first word is /saveloc
+{
+hideChat(1) #hide the command
+LocationsNumber = LocationsNumber + 1
+TeleportationArray[LocationsNumber,vector] = owner():pos()
+TeleportName[LocationsNumber,string] = Chat:string(2)
+hint("Locations Number: "+LocationsNumber,4)
+hint("Locations Name: "+TeleportName[LocationsNumber,string],4)
+hint("Locations Vector: "+TeleportationArray[LocationsNumber,vector],4)
+}
+
+if (Chat:string(1) == "/teleport")
+{ 
+hideChat(1)
+
+if (Chat:string(2) == "aim")
+{
+OriginEntity = findPlayerByName(Chat:string(3))
+
+if (OriginEntity:inVehicle())
+{
+Chair = OriginEntity:vehicle()
+Ship = Chair:isWeldedTo()
+Origin = OriginEntity:pos()
+Dest = owner():aimPos() + OriginEntity:up() * Ship:radius()
+}
+else
+{
+Origin = OriginEntity:pos()
+Dest = owner():aimPos() + owner():up() * owner():radius()
+timer("Send",50)
+}
+}
+
+elseif (Chat:string(2) == "loc")
+{
+OriginEntity = findPlayerByName(Chat:string(3))
+if (OriginEntity:inVehicle())
+{
+Chair = OriginEntity:vehicle()
+Ship = Chair:isWeldedTo()
+Origin = OriginEntity:pos()
+TeleportNumber = Chat:string(4):toNumber()
+Dest = TeleportationArray[TeleportNumber,vector] + OriginEntity:up() * Ship:radius()
+}
+else
+{
+Origin = OriginEntity:pos()
+TeleportNumber = Chat:string(4):toNumber()
+Dest = TeleportationArray[TeleportNumber,vector] + owner():up() * owner():radius()
+}
+}
+timer("Send",50)
+}
+
+elseif (Chat:string(2) == "prop")
+{
+OriginEntity = findPlayerByName(Chat:string(3))
+Origin = OriginEntity:pos()
+DestEntity = owner():aimEntity()
+Dest = DestEntity:pos() + owner():up() * DestEntity:radius()
+timer("Send",50)
+}
+
+elseif (Chat:string(2) == "ship")
+{
+OriginEntity = entity():isWeldedTo()
+Origin = OriginEntity:pos()
+DestEntity = findPlayerByName(Chat:string(3))
+
+if (DestEntity:inVehicle())
+{
+Chair = DestEntity:vehicle()
+Ship = Chair:isWeldedTo()
+Dest = Ship:pos() + OriginEntity:up() * DestEntity:radius()
+timer("Send",50)
+}
+
+else 
+{
+Dest = DestEntity:pos() + OriginEntity:up() * DestEntity:radius()
+}
+}
+
+else
+{
+OriginEntity = findPlayerByName(Chat:string(2))
+DestEntity = findPlayerByName(Chat:string(3))
+Origin = OriginEntity:pos()
+Dest = DestEntity:pos() + OriginEntity:up() * DestEntity:radius()
+}
+}
+
+if (Chat:string(1) == "/teleporteverything")
+{
+hideChat(1)
+if (Teleport_Everything == 0) {Teleport_Everything = 1} else {Teleport_Everything = 0}
+}
+
+if (Chat:string(1) == "/locations")
+{
+hideChat(1)
+Count = 0
+TeleportNumber = TeleportName:count()
+for (I = Count, TeleportNumber)
+{
+Count = Count + 1
+hint("Location #"+Count+": "+TeleportName[Count,string], 7)
+}
+}
+}
+
+if (clk("Send")) {Send = 1} else {Send = 0}

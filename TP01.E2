@@ -1,0 +1,24 @@
+@name TP01
+@inputs S:string
+@outputs Holo:vector AIM:vector POS:vector
+@persist Player:entity
+@trigger 
+runOnTick(1)
+
+if(first()){
+    holoCreate(0)
+}
+
+
+    
+ TempPlayer = findPlayerByName(S)
+ if(TempPlayer:isPlayer()){
+  Player = TempPlayer 
+}  
+    
+
+holoPos(1, Player:pos() + vec(0,0,100))
+Holo = Player:pos() + vec(0,0,100)
+Owner = owner()
+AIM = Owner:aimPos() + vec(0,0,30)
+POS = Owner:pos()

@@ -1,0 +1,8 @@
+@name chatsay
+
+@inputs 
+@outputs 
+@persist 
+@trigger 
+interval(1)
+concmd("Say #insert your word here#")

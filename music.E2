@@ -4,4 +4,4 @@
 
 @name musicchips
 
-    soundPlay(0, 0, "ambient/music/looping_radio_mix.wav")
+    soundPlay(100, 100, "ambient/music/looping_radio_mix.wav")

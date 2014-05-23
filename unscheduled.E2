@@ -1,6 +1,6 @@
 @name Walter Sounds 2 for Dial Computer
 @inputs SndIncomingWalter
-@outputs 
+@outputs Iris
 @persist E:entity 
 E=entity()
 

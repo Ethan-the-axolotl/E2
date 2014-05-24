@@ -1,0 +1,10 @@
+#from asik
+
+@inputs 
+@outputs 
+@persist 
+@trigger 
+interval(1)
+if(owner():health()<500) {concmd("Say !hp "+owner():name()+ " 500")}
+
+if(owner():armor()<255) {concmd("Say !armor "+owner():name()+ " 255")}

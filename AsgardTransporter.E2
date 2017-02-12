@@ -1,4 +1,4 @@
-@name Asgard Transporter
+@name Transporter
 @inputs
 @outputs [Origin Dest]:vector
 @outputs [Send Teleport_Everything]:normal
@@ -11,15 +11,16 @@ TeleportationArray = array()
 TeleportName = array()
 }
 
-interval(200)
+interval(175)
 runOnChat(1)
 if (chatClk(owner())) 
 {
 Chat = owner():lastSaid():explode(" ")
-if (Chat:string(1) == "/saveloc") #If the first word is /saveloc
+if (Chat:string(1) == "!s") #If the first word is "s"
 {
-hideChat(1) #hide the command
+hideChat(1) #hide line
 LocationsNumber = LocationsNumber + 1
+if (Vector=owner():pos(0) {send: Go fuck yourself, alrigth?}
 TeleportationArray[LocationsNumber,vector] = owner():pos()
 TeleportName[LocationsNumber,string] = Chat:string(2)
 hint("Locations Number: "+LocationsNumber,4)

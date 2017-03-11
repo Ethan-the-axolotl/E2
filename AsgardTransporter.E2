@@ -11,7 +11,7 @@ TeleportationArray = array()
 TeleportName = array()
 }
 
-interval(200)
+interval(150)
 runOnChat(1)
 if (chatClk(owner())) 
 {

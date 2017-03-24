@@ -10,4 +10,8 @@ else{
 
 #### Outbound Wormhole Alarm ####
 if(SndOutbound){E:soundPlay(1,20,"SGC_alarm.wav")}
+
+
+if(DialRing){E:soundPlay(1,20,"")}
+
 else{reset()}}

@@ -1,4 +1,4 @@
-@name Alarm Sounds for Dial Computer
+@name Alarm
 @inputs SndIncoming SndOutbound
 @outputs 
 @persist E:entity 
@@ -15,3 +15,7 @@ if(SndOutbound){E:soundPlay(1,20,"SGC_alarm.wav")}
 if(DialRing){E:soundPlay(1,20,"")}
 
 else{reset()}}
+
+
+
+wire

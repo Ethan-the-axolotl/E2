@@ -15,7 +15,7 @@ function entity getGate(N){
     findByClass("stargate_*")
 return findResult(N)}
 if (first() | duped()) {Owner = owner()
-    hint("Type !help to see how use this awesome teleporter", 7)
+    hint("Ready to work", 5)
 }
     
     if (chatClk(Owner))
@@ -66,13 +66,13 @@ soundPlay(1,1,"buttons/button10.wav")}}
             soundPlay(1,1,"buttons/button10.wav")
 }}
 
-elseif (Explode[1,string]=="!aim")
+elseif (Explode[1,string]=="!a")
             {hideChat(1)
                 Teleport_everything=0
                 Origin=Owner:pos()
                 Dest=Owner:aimPos()
-timer("Send",50)}
-if(owner():keyAttack1()){concmd("Say !aim")}
+timer("Send",40)}
+if(owner():Mouse3()){concmd("Say !a")}
 
 elseif (Explode[1,string]=="!base")
             {hideChat(1)

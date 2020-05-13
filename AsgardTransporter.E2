@@ -126,6 +126,5 @@ Count = Count + 1
 hint("Location #"+Count+": "+TeleportName[Count,string], 7)
 }
 }
-}
 
 if (clk("Send")) {Send = 1} else {Send = 0}

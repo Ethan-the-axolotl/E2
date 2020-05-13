@@ -72,7 +72,7 @@ elseif (Explode[1,string]=="!a")
                 Origin=Owner:pos()
                 Dest=Owner:aimPos()
 timer("Send",40)}
-if(owner():Mouse3()){concmd("Say !a")}
+###if(owner():Mouse3()){concmd("Say !a")}###
 
 elseif (Explode[1,string]=="!base")
             {hideChat(1)
